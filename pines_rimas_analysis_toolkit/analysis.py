@@ -23,7 +23,7 @@ from scipy.optimize import minimize
 import warnings 
 from astropy.utils.exceptions import AstropyUserWarning
 warnings.simplefilter("ignore", category=RuntimeWarning)
-warnings.simplefilter("ignore", category=np.VisibleDeprecationWarning)
+#warnings.simplefilter("ignore", category=np.VisibleDeprecationWarning)
 warnings.simplefilter("ignore", category=AstropyUserWarning)
 
 import matplotlib.pyplot as plt
