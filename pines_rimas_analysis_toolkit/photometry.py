@@ -17,7 +17,7 @@ from astropy.nddata import NDData
 from astropy.utils.exceptions import AstropyUserWarning
 from astropy.coordinates import SkyCoord, Angle
 
-from photutils import CircularAperture, CircularAnnulus, aperture_photometry, make_source_mask,  EPSFBuilder, aperture_photometry, EPSFFitter
+from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry, make_source_mask,  EPSFBuilder, aperture_photometry, EPSFFitter
 
 from photutils.psf import BasicPSFPhotometry, IntegratedGaussianPRF, DAOGroup, extract_stars, IterativelySubtractedPSFPhotometry
 from photutils.utils import calc_total_error
