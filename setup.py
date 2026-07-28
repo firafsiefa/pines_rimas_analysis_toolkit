@@ -14,5 +14,10 @@ setuptools.setup(
     url='https://github.com/firafsiefa/pines_rimas_analysis_toolkit',
     license='BU',
     packages=['pines_rimas_analysis_toolkit'],
-    install_requires=['julian'],
+    install_requires=['julian', 'astropy', 'numpy', 'matplotlib',
+'pandas', 'pysftp', 'natsort', 'scipy',
+'imageio', 'netCDF4', 'bs4', 'wget',
+'photutils', 'paramiko < 3.0.0',
+'progressbar', 'reportlab', 
+'astroquery', 'scikit-learn', 'batman', 'celerite', 'emcee', 'corner'],
 )
