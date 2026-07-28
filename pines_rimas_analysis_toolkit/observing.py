@@ -10,8 +10,8 @@ from matplotlib.patches import Polygon
 from glob import glob
 from photutils import DAOStarFinder, aperture_photometry, CircularAperture, Background2D, MedianBackground
 
-from pines_rimas_analysis_toolkit.utils import get_source_names, pines_dir_check, pines_log_reader, short_name_creator, pines_login, quick_plot as qp
-from pines_rimas_analysis_toolkit.data import get_master_synthetic_image, bg_2d, reduce
+from pines_analysis_toolkit.utils import get_source_names, pines_dir_check, pines_log_reader, short_name_creator, pines_login, quick_plot as qp
+from pines_analysis_toolkit.data import get_master_synthetic_image, bg_2d, reduce
 
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clip, sigma_clipped_stats, SigmaClip
