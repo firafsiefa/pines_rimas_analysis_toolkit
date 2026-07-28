@@ -1,5 +1,5 @@
-import pines_analysis_toolkit as pat
-from pines_analysis_toolkit.utils import pines_dir_check, pines_log_reader, short_name_creator, object_directory_creator, quick_plot as qp, pines_login
+import pines_rimas_analysis_toolkit as pat
+from pines_rimas_analysis_toolkit.utils import pines_dir_check, pines_log_reader, short_name_creator, object_directory_creator, quick_plot as qp, pines_login
 
 from astropy.stats import SigmaClip
 from astropy.io import fits

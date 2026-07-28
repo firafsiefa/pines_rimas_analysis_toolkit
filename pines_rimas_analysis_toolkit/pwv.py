@@ -1,4 +1,4 @@
-from pines_analysis_toolkit.utils import pines_dir_check, short_name_creator, jd_utc_to_bjd_tdb, pines_log_reader
+from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creator, jd_utc_to_bjd_tdb, pines_log_reader
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord

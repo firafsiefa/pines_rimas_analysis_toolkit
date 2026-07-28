@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import pines_analysis_toolkit as pat
+import pines_rimas_analysis_toolkit as pat
 
 from astropy.convolution import interpolate_replace_nans, Gaussian2DKernel
 from astropy.io import fits

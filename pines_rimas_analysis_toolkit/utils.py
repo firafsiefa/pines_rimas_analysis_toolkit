@@ -1,5 +1,5 @@
 from functools import reduce
-import pines_analysis_toolkit as pat
+import pines_rimas_analysis_toolkit as pat
 
 from astropy.time import Time
 from astropy import coordinates as coord

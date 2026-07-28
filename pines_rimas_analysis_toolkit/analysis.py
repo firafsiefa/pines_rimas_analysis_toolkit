@@ -12,8 +12,8 @@ from natsort import natsorted
 import os
 from sklearn import linear_model
 import matplotlib.dates as mdates
-from pines_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_log_reader, get_source_names
-from pines_analysis_toolkit.pwv import pwv_spectrum_time_series
+from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_log_reader, get_source_names
+from pines_rimas_analysis_toolkit.pwv import pwv_spectrum_time_series
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import batman

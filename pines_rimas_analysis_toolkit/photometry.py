@@ -1,9 +1,9 @@
-import pines_analysis_toolkit as pat
-from pines_analysis_toolkit.analysis import raw_flux_plot
-from pines_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_log_reader, quick_plot as qp, jd_utc_to_bjd_tdb, get_source_names, jd_utc_to_bjd_tdb
-from pines_analysis_toolkit.data import master_dark_stddev_chooser, bpm_chooser, bg_2d
-from pines_analysis_toolkit.analysis import night_splitter, block_splitter
-from pines_analysis_toolkit.observing import seeing_measurer
+import pines_rimas_analysis_toolkit as pat
+from pines_rimas_analysis_toolkit.analysis import raw_flux_plot
+from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_log_reader, quick_plot as qp, jd_utc_to_bjd_tdb, get_source_names, jd_utc_to_bjd_tdb
+from pines_rimas_analysis_toolkit.data import master_dark_stddev_chooser, bpm_chooser, bg_2d
+from pines_rimas_analysis_toolkit.analysis import night_splitter, block_splitter
+from pines_rimas_analysis_toolkit.observing import seeing_measurer
 
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats, gaussian_sigma_to_fwhm
