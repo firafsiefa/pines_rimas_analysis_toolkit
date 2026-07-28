@@ -1,5 +1,5 @@
 from functools import reduce
-import pines_analysis_toolkit as pat
+import pines_rimas_analysis_toolkit as pat
 
 from astropy.time import Time
 from astropy import coordinates as coord
@@ -11,7 +11,7 @@ from astropy.convolution import interpolate_replace_nans, Gaussian2DKernel
 
 import pandas as pd
 import pysftp
-import getpass
+#import getpass
 import distutils
 import os
 from glob import glob
@@ -229,7 +229,7 @@ def mimir_date_reader(header):
             'Header DATE-OBS format does not match the format code in strptime! Inspect/correct the DATE-OBS value.')
         breakpoint()
 
-
+'''
 def pines_login():
     """Establishes an sftp connection with the PINES server.
 
@@ -258,7 +258,7 @@ def pines_login():
                 print('Login failed! {} {} remaining.'.format(i, verb))
             else:
                 print('ERROR: login failed after {} tries.'.format(i))
-
+'''
 
 def profile_reader(short_name, force_output_path=''):
     """Reads in data from a target's .profile file.

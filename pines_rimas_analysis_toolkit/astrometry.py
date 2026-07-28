@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import pines_analysis_toolkit as pat
+import pines_rimas_analysis_toolkit as pat
 
 from astropy.convolution import interpolate_replace_nans, Gaussian2DKernel
 from astropy.io import fits
@@ -20,16 +20,16 @@ import pandas as pd
 import requests
 
 import sys
-import base64
+#import base64
 
 from urllib.parse import urlencode, quote
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.encoders import encode_noop
+#from email.mime.base import MIMEBase
+#from email.mime.multipart import MIMEMultipart
+#from email.mime.application import MIMEApplication
+#from email.encoders import encode_noop
 
 import json
 
@@ -210,7 +210,7 @@ class Client(object):
         result = self.send_request(service, {'wcs': params})
         #print('Result status:', result['status'])
         plotdata = result['plot']
-        plotdata = base64.b64decode(plotdata)
+        #plotdata = base64.b64decode(plotdata)
         open(outfn, 'wb').write(plotdata)
         #print('Wrote', outfn)
 

@@ -1,6 +1,6 @@
 from scipy.stats import norm 
 import numpy as np 
-from pines_analysis_toolkit.astrometry import faherty_2016_spt_teff_relation
+from pines_rimas_analysis_toolkit.astrometry import faherty_2016_spt_teff_relation
 import astropy.constants as const 
 
 def pines_J_band_noise_model(x, nexp, exp_time):
