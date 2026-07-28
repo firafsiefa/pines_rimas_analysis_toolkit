@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import requests
 from bs4 import BeautifulSoup
-from pines_analysis_toolkit.utils import get_source_names
+from pines_rimas_analysis_toolkit.utils import get_source_names
 import wget
 from multiprocessing.pool import ThreadPool
 from datetime import datetime
