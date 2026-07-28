@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='pines_analysis_toolkit',
+    name='pines_rimas_analysis_toolkit',
     version='1.0.0',
     author='Patrick Tamburo',
     author_email='tamburop@bu.edu',
