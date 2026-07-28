@@ -12,7 +12,7 @@ from astropy.convolution import interpolate_replace_nans, Gaussian2DKernel
 import pandas as pd
 import pysftp
 import getpass
-import distutils
+#import distutils
 import os
 from glob import glob
 from natsort import natsorted
@@ -334,7 +334,7 @@ def profile_reader(short_name, force_output_path=''):
 
     output_dict = {'source_detect_image': df['source_detect_image'].iloc[0].strip(),
                    'source_detect_filter': df['source_detect_filter'].iloc[0].strip(),
-                   'exclude_lower_left': bool(distutils.util.strtobool(df['exclude_lower_left'].iloc[0].strip())),
+                   #'exclude_lower_left': bool(distutils.util.strtobool(df['exclude_lower_left'].iloc[0].strip())),
                    'dimness_tolerance': float(df['dimness_tolerance'].iloc[0]),
                    'brightness_tolerance': float(df['brightness_tolerance'].iloc[0]),
                    'distance_from_target': float(df['distance_from_target'].iloc[0]),
