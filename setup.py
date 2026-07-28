@@ -11,8 +11,8 @@ setuptools.setup(
     description='Analysis pipeline for PINES.',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/patricktamburo/pines_analysis_toolkit',
+    url='https://github.com/firafsiefa/pines_rimas_analysis_toolkit',
     license='MIT',
-    packages=['pines_analysis_toolkit'],
+    packages=['pines_rimas_analysis_toolkit'],
     install_requires=['julian'],
 )
