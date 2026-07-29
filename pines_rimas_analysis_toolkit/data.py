@@ -750,13 +750,13 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
                     lights_off_files.append(file_name)
 
         else:
-            files_in_dir = np.array([Path(i) for i in natsorted(glob.glob(str(dome_flat_raw_path)+'/*.fits'))])
+            files_in_dir = flat_files #np.array([Path(i) for i in natsorted(glob.glob(str(dome_flat_raw_path)+'/*.fits'))])
             for i in range(len(files_in_dir)):
                 header = fits.open(files_in_dir[i])[0].header
                 if (header['OBJTYPE'] == 'Dome_flat') and ((header['FILTER1'] == band) or (header['FILTER2']==band)):
                     flat_files.append(files_in_dir[i].name)
                     lights_on_files.append(files_in_dir[i].name)
-                if (header['OBJTYPE'] == 'dome_lamp_off') and ((header['FILTER1'] == band) or (header['FILTER2']==band)):
+                if (header['OBJTYPE'] == 'Dome_background') and ((header['FILTER1'] == band) or (header['FILTER2']==band)):
                     flat_files.append(files_in_dir[i].name)
                     lights_off_files.append(files_in_dir[i].name)
 
