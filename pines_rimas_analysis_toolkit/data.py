@@ -368,12 +368,12 @@ def dark(date, exptime, band, dark_start=0, dark_stop=0, upload=False, delete_ra
 
     output_filename = pines_path / \
         ('Calibrations/Darks/Master Darks Stddev/master_dark_stddev_' +
-         str(exptime)+'_s_'+date+'.fits')
+         str(exptime)+'_s_'+date+'_'+band+'.fits')
 
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(master_dark_stddev)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
     username = ''
 
     # Now save to a file on your local machine.
