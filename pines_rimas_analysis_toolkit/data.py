@@ -52,7 +52,7 @@ def bpm_chooser(bpm_path, filter, header):
     """
     exptime = header['EXPTIMEC']
     band = filter
-    obs_date = datetime.strptime(
+    obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_bpms = [x for x in (bpm_path.glob(
         '*'+band+'_'+str(exptime)+'*.fits'))]
@@ -1683,7 +1683,7 @@ def master_dark_chooser(dark_path, band, header):
     """
 
     exptime = header['EXPTIMEC']
-    obs_date = datetime.strptime(
+    obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_darks = [x for x in (
         dark_path/'Master Darks').glob('*'+str(exptime)+'_'+band+'.fits')]
@@ -1715,7 +1715,7 @@ def master_dark_stddev_chooser(dark_std_path, band, header):
     """
 
     exptime = header['EXPTIMEC']
-    obs_date = datetime.strptime(
+    obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_dark_stds = [
         x for x in dark_std_path.glob('*'+str(exptime)+'_'+band+'.fits')]
@@ -1746,7 +1746,7 @@ def master_flat_chooser(flats_path, filter, header):
     :rtype: pathlib.PosixPath, str
     """
     band = filter
-    obs_date = datetime.strptime(
+    obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_flats = [x for x in (
         flats_path/(band+'/Master Flats')).glob('*.fits')]
