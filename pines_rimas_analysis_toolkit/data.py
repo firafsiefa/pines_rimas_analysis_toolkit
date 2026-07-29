@@ -1693,7 +1693,7 @@ def master_dark_chooser(dark_path, band, header):
         return
     else:
         possible_dark_dates = [datetime.datetime.strptime(i.name.split(
-            '_')[-2].split('.')[0], '%Y%m%d') for i in possible_darks]
+            '_')[-2], '%Y%m%d') for i in possible_darks]
         dark_date_distances = [abs(possible_dark_dates[i]-obs_date)
                                for i in range(len(possible_dark_dates))]
         dark_ind = np.where(np.array(dark_date_distances) ==
@@ -1725,7 +1725,7 @@ def master_dark_stddev_chooser(dark_std_path, band, header):
         return
     else:
         possible_dark_std_dates = [datetime.datetime.strptime(i.name.split(
-            '_')[-2].split('.')[0], '%Y%m%d') for i in possible_dark_stds]
+            '_')[-2], '%Y%m%d') for i in possible_dark_stds]
         dark_std_date_distances = [abs(
             possible_dark_std_dates[i]-obs_date) for i in range(len(possible_dark_std_dates))]
         dark_std_ind = np.where(np.array(dark_std_date_distances) == min(
