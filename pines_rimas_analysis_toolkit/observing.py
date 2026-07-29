@@ -23,7 +23,8 @@ from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
 from astropy.io import fits
 from astropy.visualization import ImageNormalize, ZScaleInterval, LinearStretch
 import astropy.units as u 
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.time import Time
 
 from scipy import signal
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
