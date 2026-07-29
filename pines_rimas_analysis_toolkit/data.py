@@ -76,7 +76,7 @@ def bpm_chooser(bpm_path, filter, header):
     return master_bpm, master_bpm_name
 
 
-def bpm_maker(flat_date, dark_date, rdm_name, exptime, band, upload=False, sftp='', force_output_path=''):
+def bpm_maker(flat_date, dark_date, rdm_name, exptime, filter, band, upload=False, sftp='', force_output_path=''):
     """Creates a combined bad pixel mask from Kokopelli, variable, hot, and dead pixel masks.
 
     :param flat_date: date of the master flat used to reduce the image
@@ -110,15 +110,15 @@ def bpm_maker(flat_date, dark_date, rdm_name, exptime, band, upload=False, sftp=
 
     variable_path = pines_path / \
         ('Calibrations/Variable Pixel Masks/vpm_' +
-         str(exptime)+'_s_'+dark_date+'.fits')
+         str(exptime)+'_s_'+dark_date+'_'+band+'.fits')
     variable_mask = fits.open(variable_path)[0].data
 
     hot_path = pines_path / \
-        ('Calibrations/Hot Pixel Masks/hpm_'+str(exptime)+'_s_'+dark_date+'.fits')
+        ('Calibrations/Hot Pixel Masks/hpm_'+str(exptime)+'_s_'+dark_date+'_'+band+'.fits')
     hot_mask = fits.open(hot_path)[0].data
 
     dead_path = pines_path / \
-        ('Calibrations/Dead Pixel Masks/dpm_'+band+'_'+flat_date+'.fits')
+        ('Calibrations/Dead Pixel Masks/dpm_'+filter+'_'+flat_date+'.fits')
     dead_mask = fits.open(dead_path)[0].data
 
     # Visualize all masks
@@ -136,7 +136,7 @@ def bpm_maker(flat_date, dark_date, rdm_name, exptime, band, upload=False, sftp=
     print('{} percent of the detector flagged as bad.'.format(
         np.round(frac_bad*100, 1)))
 
-    output_filename = 'bpm_'+band+'_'+str(float(exptime))+'_s_'+flat_date+'.fits'
+    output_filename = 'bpm_'+filter+'_'+str(float(exptime))+'_s_'+flat_date+'.fits'
     output_path = pines_path/('Calibrations/Bad Pixel Masks/'+output_filename)
 
     hdu = fits.PrimaryHDU(bpm)
