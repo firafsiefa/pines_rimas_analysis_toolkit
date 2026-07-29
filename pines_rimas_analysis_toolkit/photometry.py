@@ -17,13 +17,14 @@ from astropy.nddata import NDData
 from astropy.utils.exceptions import AstropyUserWarning
 from astropy.coordinates import SkyCoord, Angle
 
-from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry, make_source_mask,  EPSFBuilder, aperture_photometry, EPSFFitter
-
-from photutils.psf import BasicPSFPhotometry, IntegratedGaussianPRF, DAOGroup, extract_stars, IterativelySubtractedPSFPhotometry
+from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
+from photutils.psf import BasicPSFPhotometry, IntegratedGaussianPRF, DAOGroup, extract_stars, IterativelySubtractedPSFPhotometry, EPSFBuilder, EPSFFitter
 from photutils.utils import calc_total_error
 from photutils.detection import IRAFStarFinder, DAOStarFinder
 from photutils.centroids import centroid_sources, centroid_2dg, centroid_1dg, centroid_com
 from photutils.background import MMMBackground
+from photutils.segmentation import SegmentationImage
+
 
 from scipy.stats import sigmaclip, mode as scipy_mode
 from scipy import optimize
@@ -257,7 +258,12 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
 
     # Now measure the background around each source.
     # Make a mask to block out any sources that might show up in the annuli and bias them.
-    mask = make_source_mask(data, nsigma=3, npixels=5, dilate_size=7)
+    data = data.astype(int)
+    data[data < 0] = 0
+
+    data_segm = SegmentationImage(data)
+    mask = data_segm.make_source_mask()
+
     # Pass the data with sources masked out to the bg calculator.
     bg_phot = aperture_stats_tbl(~mask*data, bg_apertures, sigma_clip=True)
     ap_area = phot_apertures.area
