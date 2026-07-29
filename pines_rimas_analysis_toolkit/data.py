@@ -1766,7 +1766,7 @@ def master_flat_chooser(flats_path, filter, header):
         return master_flat, master_flat_name
 
 
-def reduce(short_name, filter='', band, delete_raw=False, manual_flat_path='', manual_dark_path='', manual_bpm_path='', linearity_correction=False, force_output_path=''):
+def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', manual_dark_path='', manual_bpm_path='', linearity_correction=False, force_output_path=''):
     """Reduces raw PINES science images and writes them out to disk.
 
     :param short_name: the short name for the target
