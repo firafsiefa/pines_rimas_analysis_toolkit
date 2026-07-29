@@ -778,7 +778,7 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
     if band=='J' or band=='Y':
         flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 925, 925])
     elif band=='H' or band=='K':
-        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 1000, 925])
+        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 925, 1000])
     print('')
     print('Flat frame information')
     print('-------------------------------------------------')
@@ -846,7 +846,7 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
         num_images = len(lights_off_files)
         print('Reading in ', num_images, ' lights-off flat images.')
         if band=='H' or band=='K':
-            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 1000, 925])
+            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 925, 1000])
         elif band=='J' or band=='Y':
             flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 925, 925])
         lights_off_std_devs = np.zeros(num_images)
