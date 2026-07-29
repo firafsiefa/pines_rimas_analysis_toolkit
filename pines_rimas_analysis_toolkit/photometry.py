@@ -18,7 +18,7 @@ from astropy.utils.exceptions import AstropyUserWarning
 from astropy.coordinates import SkyCoord, Angle
 
 from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
-from photutils.psf import BasicPSFPhotometry, IntegratedGaussianPRF, DAOGroup, extract_stars, IterativelySubtractedPSFPhotometry, EPSFBuilder, EPSFFitter
+from photutils.psf import PSFPhotometry, IntegratedGaussianPRF, DAOGroup, extract_stars, IterativelySubtractedPSFPhotometry, EPSFBuilder, EPSFFitter
 from photutils.utils import calc_total_error
 from photutils.detection import IRAFStarFinder, DAOStarFinder
 from photutils.centroids import centroid_sources, centroid_2dg, centroid_1dg, centroid_com
