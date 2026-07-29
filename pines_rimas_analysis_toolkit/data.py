@@ -309,10 +309,10 @@ def dark(date, exptime, band, dark_start=0, dark_stop=0, upload=False, delete_ra
     pbar = ProgressBar()
     for x in pbar(range(cube_shape[1])):
         for y in range(cube_shape[2]):
-            through_stack = dark_cube_raw[:,y,x]
+            through_stack = dark_cube_raw[:,x,y]
             v,l,h = sigmaclip(through_stack, clip_lvl, clip_lvl)
-            master_dark[y,x] = np.mean(v)
-            master_dark_stddev[y,x] = np.std(v)
+            master_dark[x,y] = np.mean(v)
+            master_dark_stddev[x,y] = np.std(v)
 
     # Turn invalid warnings back on, in case it would permanently turn it off otherwise.
     np.seterr(invalid='warn')
