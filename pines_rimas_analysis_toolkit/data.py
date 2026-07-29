@@ -8,7 +8,7 @@ from astropy.stats import histogram, sigma_clipped_stats
 from scipy.stats import sigmaclip
 
 from photutils.background import Background2D, MedianBackground
-from datetime
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
