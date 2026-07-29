@@ -1288,7 +1288,13 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
             
             # interpolate_replace_nans struggles with edge pixels, so shave off edge_shave pixels in each direction of the cutout.
             edge_shave = 1
-            cutout = cutout[edge_shave:len(cutout)-edge_shave, edge_shave:len(cutout)-edge_shave]
+            cutout = cutout.astype(int)
+            cutout[cutout < 0] = 0
+            cutout = SegmentationImage(cutout[edge_shave:len(cutout)-edge_shave, edge_shave:len(cutout)-edge_shave].astype(int))
+            cutout = np.array(cutout)
+    
+            if len(cutout[0]) == 0:
+                continue
 
             # #Check for cosmic rays in the cutout. 
             # avg, med, std = sigma_clipped_stats(cutout, sigma=4)
@@ -1348,8 +1354,11 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
             # Check that your measured position is actually on the detector.
             if (centroid_x < 0) or (centroid_y < 0) or (centroid_x > image.shape[1]) or (centroid_y > image.shape[0]):
                 # Try a quick mask/interpolation of the cutout.
-                mask = make_source_mask(
-                    cutout, nsigma=3, npixels=5, dilate_size=3)
+                cutout = cutout.astype(int)
+                cutout[cutout < 0] = 0
+                cutout = SegmentationImage(cutout)
+                mask = cutout.make_source_mask()
+                cutout = np.array(cutout).astype(float)
                 vals, lo, hi = sigmaclip(cutout[~mask])
                 bad_locs = np.where((mask == False) & (
                     (cutout > hi) | (cutout < lo)))
