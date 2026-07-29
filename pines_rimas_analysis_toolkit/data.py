@@ -40,7 +40,7 @@ def bg_2d(data, box_size=50):
     return data - bkg.background
 
 
-def bpm_chooser(bpm_path, header):
+def bpm_chooser(bpm_path, filter, header):
     """Identifies the closest bpm in time to the image you want reduce, that has the correct exposure time and is in the right band.
 
     :param bpm_path: path to the ~/PINES_analysis_toolkit/Calibrations/Bad Pixel Masks/ directory.
@@ -50,10 +50,10 @@ def bpm_chooser(bpm_path, header):
     :return: path to and name of chosen bad pixel mask 
     :rtype: pathlib.PosixPath, str
     """
-    exptime = header['EXPTIME']
-    band = header['FILTNME2']
+    exptime = header['EXPTIMEC']
+    band = filter
     obs_date = datetime.strptime(
-        header['DATE-OBS'].split('T')[0].replace('-', ''), '%Y%m%d')
+        header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_bpms = [x for x in (bpm_path.glob(
         '*'+band+'_'+str(exptime)+'*.fits'))]
 
@@ -136,7 +136,7 @@ def bpm_maker(flat_date, dark_date, rdm_name, exptime, band, upload=False, sftp=
     print('{} percent of the detector flagged as bad.'.format(
         np.round(frac_bad*100, 1)))
 
-    output_filename = 'bpm_'+band+'_'+str(exptime)+'_s_'+flat_date+'.fits'
+    output_filename = 'bpm_'+band+'_'+str(float(exptime))+'_s_'+flat_date+'.fits'
     output_path = pines_path/('Calibrations/Bad Pixel Masks/'+output_filename)
 
     hdu = fits.PrimaryHDU(bpm)
@@ -1671,7 +1671,7 @@ def make_calibrations(sftp, exptimes, bands, dark_dates, flat_dates, dark_starts
     return
 
 
-def master_dark_chooser(dark_path, header):
+def master_dark_chooser(dark_path, band, header):
     """Identifies the closest dark in time to the image you want reduce, that has the correct exposure time.
 
     :param dark_path:  path to the ~.../PINES_analysis_toolkit/Calibrations/darks directory. 
@@ -1682,11 +1682,11 @@ def master_dark_chooser(dark_path, header):
     :rtype: pathlib.PosixPath, str
     """
 
-    exptime = header['EXPTIME']
+    exptime = header['EXPTIMEC']
     obs_date = datetime.strptime(
-        header['DATE-OBS'].split('T')[0].replace('-', ''), '%Y%m%d')
+        header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_darks = [x for x in (
-        dark_path/'Master Darks').glob('*'+str(exptime)+'*.fits')]
+        dark_path/'Master Darks').glob('*'+str(exptime)+'_'+band+'.fits')]
     if (len(possible_darks) == 0):
         print('ERROR: Could not find any suitable darks to reduce {}.'.format(
             header['FILENAME']))
@@ -1703,7 +1703,7 @@ def master_dark_chooser(dark_path, header):
         return master_dark, master_dark_name
 
 
-def master_dark_stddev_chooser(dark_std_path, header):
+def master_dark_stddev_chooser(dark_std_path, band, header):
     """Identifies the closest master_dark_stddev in time to the image you want reduce, that has the correct exposure time.
 
     :param dark_std_path:  path to the ~.../PINES_analysis_toolkit/Calibrations/dark_std directory. 
@@ -1714,11 +1714,11 @@ def master_dark_stddev_chooser(dark_std_path, header):
     :rtype: pathlib.PosixPath, str
     """
 
-    exptime = header['EXPTIME']
+    exptime = header['EXPTIMEC']
     obs_date = datetime.strptime(
-        header['DATE-OBS'].split('T')[0].replace('-', ''), '%Y%m%d')
+        header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_dark_stds = [
-        x for x in dark_std_path.glob('*'+str(exptime)+'*.fits')]
+        x for x in dark_std_path.glob('*'+str(exptime)+'_'+band+'.fits')]
     if (len(possible_dark_stds)) == 0:
         print(
             'ERROR: Could not find any suitable master_dark_stddev images to get read noise/dark current measurement for {}.'.format(header['FILENAME']))
@@ -1735,7 +1735,7 @@ def master_dark_stddev_chooser(dark_std_path, header):
         return master_dark_std
 
 
-def master_flat_chooser(flats_path, header):
+def master_flat_chooser(flats_path, filter, header):
     """Identifies the closest master flat in time to the image you want reduce, that has the correct exposure time.
 
     :param flats_path:  path to the ~.../PINES_analysis_toolkit/Calibrations/Flats/Domeflats/ directory. 
@@ -1745,9 +1745,9 @@ def master_flat_chooser(flats_path, header):
     :return: path to and name of the selected master flat
     :rtype: pathlib.PosixPath, str
     """
-    band = header['FILTNME2']
+    band = filter
     obs_date = datetime.strptime(
-        header['DATE-OBS'].split('T')[0].replace('-', ''), '%Y%m%d')
+        header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_flats = [x for x in (
         flats_path/(band+'/Master Flats')).glob('*.fits')]
     if (len(possible_flats)) == 0:
@@ -1766,7 +1766,7 @@ def master_flat_chooser(flats_path, header):
         return master_flat, master_flat_name
 
 
-def reduce(short_name, filter='', delete_raw=False, manual_flat_path='', manual_dark_path='', manual_bpm_path='', linearity_correction=False, force_output_path=''):
+def reduce(short_name, filter='', band, delete_raw=False, manual_flat_path='', manual_dark_path='', manual_bpm_path='', linearity_correction=False, force_output_path=''):
     """Reduces raw PINES science images and writes them out to disk.
 
     :param short_name: the short name for the target
@@ -1835,29 +1835,29 @@ def reduce(short_name, filter='', delete_raw=False, manual_flat_path='', manual_
                 breakpoint()
 
             # Cuts off 2 rows of overscan (?) pixels
-            frame_raw = frame_raw[0:1024, :]
+            frame_raw = frame_raw#[0:1024, :]
 
             # Add a flag to the header to check if background is near saturation
-            if sigma_clipped_stats(frame_raw)[1] > 3800:
+            if sigma_clipped_stats(frame_raw)[1] > 45000:
                 sat_flag = 1
             else:
                 sat_flag = 0
 
             # Load in the dark/flat files. If a manual path is not provided, choose the reduction image that is closest in time to when the image was taken.
             if manual_flat_path == '':
-                master_flat, master_flat_name = master_flat_chooser(flats_path, header)
+                master_flat, master_flat_name = master_flat_chooser(flats_path, filter, header)
             else:
                 master_flat = fits.open(manual_flat_path)[0].data
                 master_flat_name = manual_flat_path.name
 
             if manual_dark_path == '':
-                master_dark, master_dark_name = master_dark_chooser(dark_path, header)
+                master_dark, master_dark_name = master_dark_chooser(dark_path, band, header)
             else:
                 master_dark = fits.open(manual_dark_path)[0].data
                 master_dark_name = manual_dark_path.name
 
             if manual_bpm_path == '':
-                bad_pixel_mask, bad_pixel_mask_name = bpm_chooser(bpm_path, header)
+                bad_pixel_mask, bad_pixel_mask_name = bpm_chooser(bpm_path, filter, header)
             else:
                 bad_pixel_mask = fits.open(manual_bpm_path)[0].data
                 bad_pixel_mask_name = manual_bpm_path.name
@@ -1888,8 +1888,8 @@ def reduce(short_name, filter='', delete_raw=False, manual_flat_path='', manual_
 
             # Store some parameters in the reduced file's header.
             # Naming convention follows https://docs.astropy.org/en/stable/io/fits/usage/headers.html.
-            header['HIERARCH DATE REDUCED'] = datetime.utcnow().strftime(
-                '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+            header['HIERARCH DATE REDUCED'] = datetime.datetime.now(datetime.UTC).strftime(
+                    '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
             header['HIERARCH MASTER DARK'] = master_dark_name
             header['HIERARCH MASTER FLAT'] = master_flat_name
             header['HIERARCH BAD PIXEL MASK'] = bad_pixel_mask_name
