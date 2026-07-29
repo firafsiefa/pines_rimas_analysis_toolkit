@@ -8,7 +8,7 @@ from astropy.stats import histogram, sigma_clipped_stats
 from scipy.stats import sigmaclip
 
 from photutils.background import Background2D, MedianBackground
-from datetime import datetime
+from datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
@@ -155,7 +155,7 @@ def bpm_maker(flat_date, dark_date, exptime, band, upload=False, sftp='', force_
         print('Uploaded {} to pines.bu.edu:data/calibrations/Bad Pixel Masks/!'.format(upload_name))
 
 
-def dark(date, exptime, dark_start=0, dark_stop=0, upload=False, delete_raw=False, sftp='', force_output_path=''):
+def dark(date, exptime, band, dark_start=0, dark_stop=0, upload=False, delete_raw=False, sftp='', force_output_path=''):
     """ Creates a master dark image for a given date and exposure time, and uploads to the PINES calibrations folder
 
     :param date: date on which dark files were taken (YYYYMMDD)
@@ -262,10 +262,10 @@ def dark(date, exptime, dark_start=0, dark_stop=0, upload=False, delete_raw=Fals
     # If no sftp was passed, search for files on disk.
     else:
         dark_path = pines_path/('Calibrations/Darks/Raw')
-        all_dark_files = natsorted(list(Path(dark_path).rglob(date+'*.fits')))
+        all_dark_files = natsorted(list(Path(dark_path).rglob(date+'*'+band+'.fits')))
         dark_files = []
         for file in all_dark_files:
-            if fits.open(file)[0].header['EXPTIME'] == exptime:
+            if fits.open(file)[0].header['EXPTIMEC'] == exptime:
                 dark_files.append(file.name)
 
     num_images = len(dark_files)
@@ -274,7 +274,12 @@ def dark(date, exptime, dark_start=0, dark_stop=0, upload=False, delete_raw=Fals
             'No raw dark files found on disk with date '+date+'!')
 
     print('Reading in ', num_images, ' dark images.')
-    dark_cube_raw = np.zeros([len(dark_files), 1024, 1024])
+    if band=='YJ':
+        dark_cube_raw = np.zeros([len(dark_files), 925, 925])
+
+    elif band=='HK':
+        dark_cube_raw = np.zeros([len(dark_files), 1000, 925])
+        
     print('')
     print('Dark frame information')
     print('-------------------------------------------------')
@@ -282,15 +287,15 @@ def dark(date, exptime, dark_start=0, dark_stop=0, upload=False, delete_raw=Fals
     print('-------------------------------------------------')
     for j in range(len(dark_files)):
         # This line trims off the top two rows of the image, which are overscan.
-        image_data = fits.open(dark_path/dark_files[j])[0].data[0:1024, :]
+        image_data = fits.open(dark_path/dark_files[j])[0].data #[0:1024, :]
         header = fits.open(dark_path/dark_files[j])[0].header
-        if header['EXPTIME'] != exptime:
+        if header['EXPTIMEC'] != exptime:
             print('ERROR: {} taken has exposure time different than than exptime.'.format(
                 dark_files[j]))
             return
         dark_cube_raw[j, :, :] = image_data
-        print(str(j+1)+'    '+str(np.mean(image_data))+'    '+str(np.std(image_data)
-                                                                  )+'    ' + str(np.amax(image_data))+'    '+str(np.amin(image_data)))
+        print(str(j+1)+'    '+str(np.mean(image_data[~np.isnan(image_data)]))+'    '+str(np.std(image_data[~np.isnan(image_data)]))+'    ' 
+          + str(np.amax(image_data[~np.isnan(image_data)]))+'    '+str(np.amin(image_data[~np.isnan(image_data)])))
 
     cube_shape = np.shape(dark_cube_raw)
 
@@ -314,12 +319,12 @@ def dark(date, exptime, dark_start=0, dark_stop=0, upload=False, delete_raw=Fals
 
     output_filename = pines_path / \
         ('Calibrations/Darks/Master Darks/master_dark_' +
-         str(exptime)+'_s_'+date+'.fits')
+         str(exptime)+'_s_'+date+'_'+band+'.fits')
 
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(master_dark)
     hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
 
     # Now save to a file on your local machine.
     # Check to see if other files of this name exist.
