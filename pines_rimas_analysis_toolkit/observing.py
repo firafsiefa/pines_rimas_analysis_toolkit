@@ -6,6 +6,7 @@ import pdb
 import os
 from pathlib import Path
 from matplotlib.patches import Polygon
+from tqdm import tqdm
 
 from glob import glob
 from photutils.detection import DAOStarFinder
@@ -1326,6 +1327,31 @@ def group_separation_measurer(group_id):
         print('Object {} separated from object {} by {:1.1f}.'.format(i+1, (i+2)%(n_targs+1), sep))
     return
 
+def airmass_calc(header):
+    lat = header['LATITUDE']
+    lon = header['LONGITUD']
+    elevation = header['ALTITUDE']
+    
+    location = EarthLocation(lat=lat*u.deg, lon=lon*u.deg, height=elevation*u.m)
+    
+    obs_time = header['UTDATE']+' '+header['UTSTART']
+    time = Time(obs_time)
+    
+    ra = header['RA']
+    dec = header['DEC']
+    
+    target = SkyCoord(ra=ra, dec=dec,
+                      unit=(u.deg, u.deg))
+    
+    altaz = target.transform_to(AltAz(obstime=time, location=location))
+    
+    altitude = altaz.alt.deg
+    
+    # calculate airmass
+    airmass = altaz.secz.value if altitude > 0 else None
+
+    return np.round(airmass, 2)
+    
 def base_log_maker(date, file_list):
 
     name = []
