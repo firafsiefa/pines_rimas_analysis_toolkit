@@ -753,10 +753,10 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
             files_in_dir = np.array([Path(i) for i in natsorted(glob.glob(str(dome_flat_raw_path)+'/*.fits'))])
             for i in range(len(files_in_dir)):
                 header = fits.open(files_in_dir[i])[0].header
-                if ((header['OBJECT'] == 'dome_lamp_on') or (header['OBJECT'] == 'Flat_On')) and (header['FILTNME2'] == band):
+                if (header['OBJTYPE'] == 'Dome_flat') and ((header['FILTER1'] == band) or (header['FILTER2']==band)):
                     flat_files.append(files_in_dir[i].name)
                     lights_on_files.append(files_in_dir[i].name)
-                if ((header['OBJECT'] == 'dome_lamp_off') or (header['OBJECT'] == 'Flat_Off')) and (header['FILTNME2'] == band):
+                if (header['OBJTYPE'] == 'dome_lamp_off') and ((header['FILTER1'] == band) or (header['FILTER2']==band)):
                     flat_files.append(files_in_dir[i].name)
                     lights_off_files.append(files_in_dir[i].name)
 
@@ -775,7 +775,10 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
     num_images = len(lights_on_files)
     print('Reading in ', num_images, ' lights-on flat images.')
     # Declare datatype to match raw mimir data.
-    flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 1024, 1024])
+    if band=='J' or band=='Y':
+        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 925, 925])
+    elif band=='H' or band=='K':
+        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 1000, 925])
     print('')
     print('Flat frame information')
     print('-------------------------------------------------')
@@ -784,18 +787,18 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
     lights_on_std_devs = np.zeros(num_images)
     for j in range(len(lights_on_files)):
         image_data = fits.open(
-            dome_flat_raw_path/lights_on_files[j])[0].data[0:1024, :]
+            dome_flat_raw_path/lights_on_files[j])[0].data#[0:1024, :]
         header = fits.open(dome_flat_raw_path/lights_on_files[j])[0].header
-        if header['FILTNME2'] != band:
+        if (header['FILTER1'] != band) or (header['FILTER2'] != band):
             print('ERROR: {} taken in filter other than {}. Double check your date, try specifying start/stop file numbers, etc.'.format(
                 lights_on_files[j], band))
             return
         # This line trims off the top two rows of the image, which are overscan.
         flat_lights_on_cube_raw[j, :, :] = image_data
         # Save standard deviation of flat images to identify flats with "ski jump" horizontal bars issue.
-        lights_on_std_devs[j] = np.std(image_data)
-        print(str(j+1)+'    '+str(np.mean(image_data))+'    '+str(np.std(image_data)
-                                                                  )+'    ' + str(np.std(image_data))+'    '+str(np.amin(image_data)))
+        lights_on_std_devs[j] = np.std(image_data[~np.isnan(image_data)])
+        print(str(j+1)+'    '+str(np.mean(image_data[~np.isnan(image_data)]))+'    '+str(np.std(image_data[~np.isnan(image_data)]))
+            +'    ' + str(np.amax(image_data[~np.isnan(image_data)]))+'    '+str(np.amin(image_data[~np.isnan(image_data)])))
 
     # Identify bad lights-on flat images (usually have bright horizontal bands at the top/bottom of images.)
     vals, lo, hi = sigmaclip(lights_on_std_devs)
@@ -826,13 +829,20 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
             master_flat_lights_on_stddev[y,x] = np.std(v)
 
     if len(lights_off_files) == 0:
-        master_flat_lights_off  = np.zeros((1024, 1024))
-        master_flat_lights_off_stddev = np.zeros((1024, 1024))
+        if band=='H' or band=='K':
+            master_flat_lights_off  = np.zeros((1000, 925))
+            master_flat_lights_off_stddev = np.zeros((1000, 925))
+        elif band=='Y' or band=='J':
+            master_flat_lights_off  = np.zeros((925, 925))
+            master_flat_lights_off_stddev = np.zeros((925, 925))
     else:
         # Make cube of the lights-off images
         num_images = len(lights_off_files)
         print('Reading in ', num_images, ' lights-off flat images.')
-        flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 1024, 1024])
+        if band=='H' or band=='K':
+            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 1000, 925])
+        elif band=='J' or band=='Y':
+            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 925, 925])
         lights_off_std_devs = np.zeros(num_images)
         print('')
         print('Flat frame information')
@@ -841,19 +851,18 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
         print('-------------------------------------------------')
         for j in range(len(lights_off_files)):
             image_data = fits.open(
-                dome_flat_raw_path/lights_off_files[j])[0].data[0:1024, :]
+                dome_flat_raw_path/lights_off_files[j])[0].data#[0:1024, :]
             header = fits.open(dome_flat_raw_path/lights_off_files[j])[0].header
-            if header['FILTNME2'] != band:
+            if (header['FILTER1'] != band) or (header['FILTER2'] != band):
                 print('ERROR: {} taken in filter other than {}. Double check your date, try specifying start/stop file numbers, etc.'.format(
                     lights_off_files[j], band))
                 return
             # This line trims off the top two rows of the image, which are overscan.
             flat_lights_off_cube_raw[j, :, :] = image_data
             # Save standard deviation of flat images to identify flats with "ski jump" horizontal bars issue.
-            lights_off_std_devs[j] = np.std(image_data)
-            print(str(j+1)+'    '+str(np.mean(image_data))+'    '+str(np.std(image_data)
-                                                                    )+'    ' + str(np.std(image_data))+'    '+str(np.amin(image_data)))
-
+            lights_off_std_devs[j] = np.std(image_data[~np.isnan(image_data)])
+            print(str(j+1)+'    '+str(np.mean(image_data[~np.isnan(image_data)]))+'    '+str(np.std(image_data[~np.isnan(image_data)]))
+                +'    ' + str(np.amax(image_data[~np.isnan(image_data)]))+'    '+str(np.amin(image_data[~np.isnan(image_data)])))
         # Identify bad lights-on flat images (usually have bright horizontal bands at the top/bottom of images.)
         vals, lo, hi = sigmaclip(lights_off_std_devs)
         bad_locs = np.where((lights_off_std_devs < lo) |
@@ -898,8 +907,8 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
          '/Master Flats/master_flat_'+band+'_'+date+'.fits')
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(master_flat)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
 
     # Now save to a file on your local machine.
     print('')
@@ -942,8 +951,8 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
                                   '/Master Flats Stddev/master_flat_stddev_'+band+'_'+date+'.fits')
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(master_flat_error)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
 
     # Now save to a file on your local machine.
     # Check to see if other files of this name exist
