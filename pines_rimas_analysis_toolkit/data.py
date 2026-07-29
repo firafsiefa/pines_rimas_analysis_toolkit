@@ -65,7 +65,7 @@ def bpm_chooser(bpm_path, filter, header):
         if len(possible_bpms) == 0:
             print('ERROR: no suitable BPMs found inspect manually.')
             return
-    possible_bpm_dates = [datetime.strptime(i.name.split(
+    possible_bpm_dates = [datetime.datetime.strptime(i.name.split(
         '_')[-1].split('.')[0], '%Y%m%d') for i in possible_bpms]
     bpm_date_distances = [abs(possible_bpm_dates[i]-obs_date)
                           for i in range(len(possible_bpm_dates))]
@@ -1692,7 +1692,7 @@ def master_dark_chooser(dark_path, band, header):
             header['FILENAME']))
         return
     else:
-        possible_dark_dates = [datetime.strptime(i.name.split(
+        possible_dark_dates = [datetime.datetime.strptime(i.name.split(
             '_')[-1].split('.')[0], '%Y%m%d') for i in possible_darks]
         dark_date_distances = [abs(possible_dark_dates[i]-obs_date)
                                for i in range(len(possible_dark_dates))]
@@ -1724,7 +1724,7 @@ def master_dark_stddev_chooser(dark_std_path, band, header):
             'ERROR: Could not find any suitable master_dark_stddev images to get read noise/dark current measurement for {}.'.format(header['FILENAME']))
         return
     else:
-        possible_dark_std_dates = [datetime.strptime(i.name.split(
+        possible_dark_std_dates = [datetime.datetime.strptime(i.name.split(
             '_')[-1].split('.')[0], '%Y%m%d') for i in possible_dark_stds]
         dark_std_date_distances = [abs(
             possible_dark_std_dates[i]-obs_date) for i in range(len(possible_dark_std_dates))]
@@ -1755,7 +1755,7 @@ def master_flat_chooser(flats_path, filter, header):
             header['FILENAME']))
         return
     else:
-        possible_flat_dates = [datetime.strptime(i.name.split(
+        possible_flat_dates = [datetime.datetime.strptime(i.name.split(
             '_')[-1].split('.')[0], '%Y%m%d') for i in possible_flats]
         flat_date_distances = [abs(possible_flat_dates[i]-obs_date)
                                for i in range(len(possible_flat_dates))]
