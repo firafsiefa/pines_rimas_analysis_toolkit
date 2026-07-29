@@ -76,7 +76,7 @@ def bpm_chooser(bpm_path, header):
     return master_bpm, master_bpm_name
 
 
-def bpm_maker(flat_date, dark_date, exptime, band, upload=False, sftp='', force_output_path=''):
+def bpm_maker(flat_date, dark_date, rdm_name, exptime, band, upload=False, sftp='', force_output_path=''):
     """Creates a combined bad pixel mask from Kokopelli, variable, hot, and dead pixel masks.
 
     :param flat_date: date of the master flat used to reduce the image
@@ -98,10 +98,15 @@ def bpm_maker(flat_date, dark_date, exptime, band, upload=False, sftp='', force_
         pines_path = pines_dir_check()
 
     # Load in the different masks.
+    '''
     kokopelli_path = pines_path / \
         ('Calibrations/Kokopelli Mask/kokopelli_mask.fits')
     kokopelli_mask = (1-fits.open(kokopelli_path)
                       [0].data).astype('int')[0:1024, :]
+    '''
+    rdm_path = pines_path / \
+        ('Calibrations/RIMAS Detector Mask/'+rdm_name+'.fits')
+    rdm_mask = fits.open(rdm_path)[0].data
 
     variable_path = pines_path / \
         ('Calibrations/Variable Pixel Masks/vpm_' +
@@ -118,12 +123,15 @@ def bpm_maker(flat_date, dark_date, exptime, band, upload=False, sftp='', force_
 
     # Visualize all masks
     bpm = np.zeros(np.shape(dead_mask), dtype='int')
-    bad_locs = np.where((kokopelli_mask == 1) | (
+    bad_locs = np.where((rdm_mask == 1) | (
         variable_mask == 1) | (hot_mask == 1) | (dead_mask == 1))
     bpm[bad_locs] = 1
 
     num_bad = len(np.where(bpm == 1)[0])
-    frac_bad = num_bad / 1024**2
+    if band=='J' or band=='Y':
+        frac_bad = num_bad / 925**2
+    else:
+        frac_bad = num_bad / (925*1000)
 
     print('{} percent of the detector flagged as bad.'.format(
         np.round(frac_bad*100, 1)))
@@ -132,8 +140,8 @@ def bpm_maker(flat_date, dark_date, exptime, band, upload=False, sftp='', force_
     output_path = pines_path/('Calibrations/Bad Pixel Masks/'+output_filename)
 
     hdu = fits.PrimaryHDU(bpm)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
 
     # Now save to a file on your local machine.
     print('')
@@ -453,14 +461,16 @@ def dead_pixels(date, band, upload=False, sftp='', force_output_path=''):
     # plt.ylabel('N$_{pix}$', fontsize=14)
     # plt.title('Distribution of Pixel Values in Master Flat '+band+' '+date, fontsize=16)
     # breakpoint()
-
+    '''
     # Incorporate bad pixel information from the Kokopelli pixel mask.
     kokopelli_path = pines_path / \
         ('Calibrations/Kokopelli Mask/kokopelli_mask.fits')
     kokopelli_mask = (1-fits.open(kokopelli_path)
                       [0].data).astype('int')[0:1024, :]
     master_flat[np.where(kokopelli_mask == 1)] = np.nan
+    '''
 
+    
     print('')
     print('Flagging dead pixels.')
 
@@ -469,8 +479,8 @@ def dead_pixels(date, band, upload=False, sftp='', force_output_path=''):
     dead_pixel_mask = np.zeros((shape[0], shape[1]), dtype='int')
     total_flagged = 0
 
-    box_ls = [13, 11, 9, 7, 5]
-    clip_lvls = [4.5, 4.5, 4.5, 4, 4]
+    box_ls = [13, 11, 9]#, 7, 5]
+    clip_lvls = [13,12,10]#[4.5, 4.5, 4.5, 4, 4]
     iteration = 1
     for i in range(len(box_ls)):
         box_l = box_ls[i]
@@ -514,8 +524,8 @@ def dead_pixels(date, band, upload=False, sftp='', force_output_path=''):
     output_path = pines_path/('Calibrations/Dead Pixel Masks/'+output_filename)
 
     hdu = fits.PrimaryHDU(dead_pixel_mask)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
     hdu.header['HIERARCH SIGMA CLIP LVL'] = clip_lvl
 
     # Now save to a file on your local machine.
@@ -1313,7 +1323,7 @@ def get_reduced_science_files(sftp, target_name):
     print('Done!')
 
 
-def hot_pixels(date, exptime, saturation=4000., upload=False, sftp='', force_output_path=''):
+def hot_pixels(date, exptime, band, saturation=45000., upload=False, sftp='', force_output_path=''):
     """Creates a hot pixel mask from master dark. Flags pixels as hot if they exceed clip_lvl * the standard deviation of neighboring pixels in 
             a box of dimensions box_l x box_l surrounding the target pixel. Iterates through the master dark multiple times until no new bad pixels
             are found. 
@@ -1339,7 +1349,7 @@ def hot_pixels(date, exptime, saturation=4000., upload=False, sftp='', force_out
 
     darks_path = pines_path/('Calibrations/Darks/Master Darks/')
     all_dark_stddev_files = natsorted(
-        list(Path(darks_path).rglob('*'+date+'.fits')))
+        list(Path(darks_path).rglob('*'+date+'_'+band+'.fits')))
     dark_file = ''
     for file in all_dark_stddev_files:
         if float(file.name.split('_')[2]) == exptime:
@@ -1373,8 +1383,8 @@ def hot_pixels(date, exptime, saturation=4000., upload=False, sftp='', force_out
 
     # This will iterate until it finds no more hot pixels.
     total_flagged = 0
-    clip_lvls = [10, 10, 10, 9, 8]
-    box_ls = [13, 11, 9, 7, 5]
+    clip_lvls = [13,12,10]#[10, 10, 10, 9, 8]
+    box_ls = [13,11,9]#[13, 11, 9, 7, 5]
 
     iteration = 0
     for i in range(len(box_ls)):
@@ -1420,13 +1430,13 @@ def hot_pixels(date, exptime, saturation=4000., upload=False, sftp='', force_out
     print('')
     print('Found {} hot pixels.'.format(total_flagged))
 
-    output_filename = 'hpm_'+str(exptime)+'_s_'+date+'.fits'
+    output_filename = 'hpm_'+str(exptime)+'_s_'+date+'_'+band+'.fits'
     output_path = pines_path/('Calibrations/Hot Pixel Masks/'+output_filename)
 
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(hot_pixel_mask)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
     hdu.header['HIERARCH SIGMA CLIP LVL'] = clip_lvl
 
     # Now save to a file on your local machine.
@@ -1984,7 +1994,7 @@ def upload_reduced_data(sftp, short_name):
         sftp.chdir('..')
 
 
-def variable_pixels(date, exptime, clip_lvl=5., upload=False, sftp='', force_output_path=''):
+def variable_pixels(date, exptime, band, clip_lvl=5., upload=False, sftp='', force_output_path=''):
     """Creates a map of variable pixels using a dark stddev image
 
     :param date: UT date during which the dome flat field data was obtained (YYYYMMDD)
@@ -2006,7 +2016,7 @@ def variable_pixels(date, exptime, clip_lvl=5., upload=False, sftp='', force_out
 
     dark_stddev_path = pines_path/('Calibrations/Darks/Master Darks Stddev/')
     all_dark_stddev_files = natsorted(
-        list(Path(dark_stddev_path).rglob('*'+date+'.fits')))
+        list(Path(dark_stddev_path).rglob('*'+date+'_'+band+'.fits')))
     dark_stddev_file = ''
     for file in all_dark_stddev_files:
         if float(file.name.split('_')[3]) == exptime:
@@ -2027,14 +2037,14 @@ def variable_pixels(date, exptime, clip_lvl=5., upload=False, sftp='', force_out
     print('')
     print('Found {} variable pixels.'.format(len(variable_inds[0])))
 
-    output_filename = 'vpm_'+str(exptime)+'_s_'+date+'.fits'
+    output_filename = 'vpm_'+str(exptime)+'_s_'+date+'_'+band+'.fits'
     output_path = pines_path / \
         ('Calibrations/Variable Pixel Masks/'+output_filename)
 
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(variable_mask)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
-        '%Y-%m-%d')+'T'+datetime.utcnow().strftime('%H:%M:%S')
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
+        '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
     hdu.header['HIERARCH SIGMA CLIP LVL'] = clip_lvl
     hdu.header['HIERARCH CLIP VALUE'] = clip_lvl*np.nanmean(master_dark_stddev)
 
