@@ -1686,7 +1686,7 @@ def master_dark_chooser(dark_path, band, header):
     obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_darks = [x for x in (
-        dark_path/'Master Darks').glob('*'+str(exptime)+'_'+band+'.fits')]
+        dark_path/'Master Darks').glob('*'+str(exptime)+'*_'+band+'.fits')]
     if (len(possible_darks) == 0):
         print('ERROR: Could not find any suitable darks to reduce {}.'.format(
             header['ASDFNAME']))
@@ -1718,7 +1718,7 @@ def master_dark_stddev_chooser(dark_std_path, band, header):
     obs_date = datetime.datetime.strptime(
         header['DATE'].split('T')[0].replace('-', ''), '%Y%m%d')
     possible_dark_stds = [
-        x for x in dark_std_path.glob('*'+str(exptime)+'_'+band+'.fits')]
+        x for x in dark_std_path.glob('*'+str(exptime)+'*_'+band+'.fits')]
     if (len(possible_dark_stds)) == 0:
         print(
             'ERROR: Could not find any suitable master_dark_stddev images to get read noise/dark current measurement for {}.'.format(header['ASDFNAME']))
