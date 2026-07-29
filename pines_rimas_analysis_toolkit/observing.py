@@ -1325,3 +1325,63 @@ def group_separation_measurer(group_id):
         sep = s1.separation(s2)
         print('Object {} separated from object {} by {:1.1f}.'.format(i+1, (i+2)%(n_targs+1), sep))
     return
+
+def base_log_maker(date, file_list):
+
+    name = []
+    dates = []
+    target = []
+    filt = []
+    exptime =[]
+    airmass = []
+    x_shift = []
+    y_shift = []
+    x_see = []
+    y_see = []
+    post = []
+    shift = []
+    
+    for i in tqdm(range(len(file_list))):
+        file = fits.open(file_list[i])[0]
+        header = file.header
+        image = file.data
+
+        if header['OBJNAME'][:5] == '2MASS':
+            split = header['OBJNAME'].split('SS')
+            objname = split[0]+'SS J'+split[1]
+    
+        else:
+            continue
+        
+        name.append(file_list[i][26:])
+        dates.append(header['DATE'][:19])
+        target.append(objname)
+        filt.append(header['FILTER1'])
+        exptime.append(header['EXPTIMEC'])
+        airmass.append(airmass_calc(header))
+        x_shift.append(0)
+        y_shift.append(0)
+        x_see.append(1.5)
+        y_see.append(1.5)
+        post.append(0)
+        shift.append(0)
+
+    log_data = {'Filename': name,
+            'Date': dates,
+            'Target': target,
+            'Filt.': filt,
+            'Exptime': exptime,
+            'Airmass': airmass,
+            'X shift': x_shift,
+            'Y shift': y_shift,
+            'X seeing': x_see,
+            'Y seeing': y_see,
+            'Post-processing flag': post,
+            'Shift-quality flag': shift}
+
+    log_df = pd.DataFrame(log_data)
+    
+    log_path = 'Logs/'+date+'_log.txt'
+    log_df.to_csv(log_path, index=False)
+
+    print('Log saved to '+log_path)
