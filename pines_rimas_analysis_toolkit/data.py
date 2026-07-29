@@ -778,7 +778,7 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
     if band=='J' or band=='Y':
         flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 925, 925])
     elif band=='H' or band=='K':
-        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 925, 1000])
+        flat_lights_on_cube_raw = np.zeros([len(lights_on_files), 1000, 925])
     print('')
     print('Flat frame information')
     print('-------------------------------------------------')
@@ -829,10 +829,10 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
     pbar = ProgressBar()
     for x in pbar(range(lights_on_cube_shape[1])):
         for y in range(lights_on_cube_shape[2]):
-            through_stack = flat_lights_on_cube_raw[:,y,x]
+            through_stack = flat_lights_on_cube_raw[:,x,y]
             v,l,h = sigmaclip(through_stack, clip_lvl, clip_lvl)
-            master_flat_lights_on[y,x] = np.mean(v)
-            master_flat_lights_on_stddev[y,x] = np.std(v)
+            master_flat_lights_on[x,y] = np.mean(v)
+            master_flat_lights_on_stddev[x,y] = np.std(v)
 
     if len(lights_off_files) == 0:
         if band=='H' or band=='K':
@@ -846,7 +846,7 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
         num_images = len(lights_off_files)
         print('Reading in ', num_images, ' lights-off flat images.')
         if band=='H' or band=='K':
-            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 925, 1000])
+            flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 1000, 925])
         elif band=='J' or band=='Y':
             flat_lights_off_cube_raw = np.zeros([len(lights_off_files), 925, 925])
         lights_off_std_devs = np.zeros(num_images)
@@ -897,10 +897,10 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
         pbar = ProgressBar()
         for x in pbar(range(lights_off_cube_shape[1])):
             for y in range(lights_off_cube_shape[2]):
-                through_stack = flat_lights_off_cube_raw[:,y,x]
+                through_stack = flat_lights_off_cube_raw[:,x,y]
                 v,l,h = sigmaclip(through_stack, clip_lvl, clip_lvl)
-                master_flat_lights_off[y,x] = np.mean(v)
-                master_flat_lights_off_stddev[y,x] = np.std(v)
+                master_flat_lights_off[x,y] = np.mean(v)
+                master_flat_lights_off_stddev[x,y] = np.std(v)
 
     # Create the master flat
     master_flat = master_flat_lights_on - master_flat_lights_off
