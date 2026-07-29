@@ -1,4 +1,4 @@
-from pines_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_login
+from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_login
 
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.pagesizes import LETTER
