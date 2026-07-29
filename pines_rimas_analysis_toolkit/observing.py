@@ -1383,9 +1383,9 @@ def base_log_maker(date, file_list):
         name.append(file_list[i][37:])
         dates.append(header['DATE'][:19])
         target.append(objname)
-        if name[-7:-5] == 'YJ':
+        if file_list[i][37:][-7:-5] == 'YJ':
             filt.append(header['FILTER1'])
-        elif name[-7:-5] == 'HK':
+        elif file_list[i][37:][-7:-5] == 'HK':
             filt.append(header['FILTER2'])
         exptime.append(header['EXPTIMEC'])
         airmass.append(airmass_calc(header))
