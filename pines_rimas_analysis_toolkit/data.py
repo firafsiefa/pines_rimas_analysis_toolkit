@@ -59,7 +59,7 @@ def bpm_chooser(bpm_path, filter, header):
 
     if (len(possible_bpms) == 0):
         print('Warning: Could not find any suitable bpms to reduce {}.'.format(
-            header['FILENAME']))
+            header['ASDFNAME']))
         print('Expanding bpm search.')
         possible_bpms = [x for x in (bpm_path.glob('*'+band+'*.fits'))]
         if len(possible_bpms) == 0:
@@ -1689,7 +1689,7 @@ def master_dark_chooser(dark_path, band, header):
         dark_path/'Master Darks').glob('*'+str(exptime)+'_'+band+'.fits')]
     if (len(possible_darks) == 0):
         print('ERROR: Could not find any suitable darks to reduce {}.'.format(
-            header['FILENAME']))
+            header['ASDFNAME']))
         return
     else:
         possible_dark_dates = [datetime.datetime.strptime(i.name.split(
@@ -1721,7 +1721,7 @@ def master_dark_stddev_chooser(dark_std_path, band, header):
         x for x in dark_std_path.glob('*'+str(exptime)+'_'+band+'.fits')]
     if (len(possible_dark_stds)) == 0:
         print(
-            'ERROR: Could not find any suitable master_dark_stddev images to get read noise/dark current measurement for {}.'.format(header['FILENAME']))
+            'ERROR: Could not find any suitable master_dark_stddev images to get read noise/dark current measurement for {}.'.format(header['ASDFNAME']))
         return
     else:
         possible_dark_std_dates = [datetime.datetime.strptime(i.name.split(
@@ -1752,7 +1752,7 @@ def master_flat_chooser(flats_path, filter, header):
         flats_path/(band+'/Master Flats')).glob('*.fits')]
     if (len(possible_flats)) == 0:
         print('ERROR: Could not find any suitable flats to reduce {}.'.format(
-            header['FILENAME']))
+            header['ASDFNAME']))
         return
     else:
         possible_flat_dates = [datetime.datetime.strptime(i.name.split(
