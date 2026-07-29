@@ -323,7 +323,7 @@ def dark(date, exptime, band, dark_start=0, dark_stop=0, upload=False, delete_ra
 
     # Add some header keywords detailing the master_dark creation process.
     hdu = fits.PrimaryHDU(master_dark)
-    hdu.header['HIERARCH DATE CREATED'] = datetime.utcnow().strftime(
+    hdu.header['HIERARCH DATE CREATED'] = datetime.datetime.now(datetime.UTC).strftime(
         '%Y-%m-%d')+'T'+datetime.datetime.now(datetime.UTC).strftime('%H:%M:%S')
 
     # Now save to a file on your local machine.
