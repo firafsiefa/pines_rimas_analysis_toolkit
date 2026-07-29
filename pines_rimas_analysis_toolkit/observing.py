@@ -1380,10 +1380,13 @@ def base_log_maker(date, file_list):
         else:
             continue
         
-        name.append(file_list[i][26:])
+        name.append(file_list[i][37:])
         dates.append(header['DATE'][:19])
         target.append(objname)
-        filt.append(header['FILTER1'])
+        if name[-7:-5] == 'YJ':
+            filt.append(header['FILTER1'])
+        elif name[-7:-5] == 'HK'
+            filt.append(header['FILTER2'])
         exptime.append(header['EXPTIMEC'])
         airmass.append(airmass_calc(header))
         x_shift.append(0)
