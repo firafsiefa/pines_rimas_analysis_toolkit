@@ -789,7 +789,13 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
         image_data = fits.open(
             dome_flat_raw_path/lights_on_files[j])[0].data#[0:1024, :]
         header = fits.open(dome_flat_raw_path/lights_on_files[j])[0].header
-        if (header['FILTER1'] != band) or (header['FILTER2'] != band):
+
+        if band=='J' or band=='Y':
+            head_filt = header['FILTER1']
+        elif band=='H' or band=='K':
+            head_filt = header['FILTER2']
+
+        if head_filt != band:
             print('ERROR: {} taken in filter other than {}. Double check your date, try specifying start/stop file numbers, etc.'.format(
                 lights_on_files[j], band))
             return
@@ -853,7 +859,12 @@ def dome_flat_field(date, band, lights_on_start=0, lights_on_stop=0, lights_off_
             image_data = fits.open(
                 dome_flat_raw_path/lights_off_files[j])[0].data#[0:1024, :]
             header = fits.open(dome_flat_raw_path/lights_off_files[j])[0].header
-            if (header['FILTER1'] != band) or (header['FILTER2'] != band):
+            if band=='J' or band=='Y':
+                head_filt = header['FILTER1']
+            elif band=='H' or band=='K':
+                head_filt = header['FILTER2']
+
+            if head_filt != band:
                 print('ERROR: {} taken in filter other than {}. Double check your date, try specifying start/stop file numbers, etc.'.format(
                     lights_off_files[j], band))
                 return
