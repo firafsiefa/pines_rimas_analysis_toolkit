@@ -55,7 +55,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=3.5, plot=Fal
     :rtype: pandas DataFrame
     """
 
-    fwhm = seeing_fwhm/0.19  # FIXED
+    fwhm = seeing_fwhm#/0.19  # FIXED
 
     # Radius of aperture in pixels for doing quick photometry on detected sources.
     ap_rad = 10
