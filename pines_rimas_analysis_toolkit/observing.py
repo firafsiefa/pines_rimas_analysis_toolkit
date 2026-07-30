@@ -524,7 +524,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
 
             # Measure the shifts and get positions of targets.
             (measured_x_shift, measured_y_shift, source_x, source_y,
-             check_image) = shift_measurer(target, image_path, filter, force_output_path=pines_path)
+             check_image) = shift_measurer(target, image_path, filter, date, force_output_path=pines_path)
 
             if (abs(measured_x_shift) > shift_tolerance) or (abs(measured_y_shift) > shift_tolerance):
                 print('Shift greater than {} pixels measured for {} in {}.'.format(
@@ -1121,7 +1121,7 @@ def pines_logging(filename, date, target_name, filter_name, exptime, airmass, x_
     return log_text
 
 
-def shift_measurer(target, image_path, filter, num_sources=15, closeness_tolerance=1., force_output_path=''):
+def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_tolerance=1., force_output_path=''):
     """Measure shifts between an image and the master synthetic image for a target. 
 
     :param target: target's full 2MASS name 
