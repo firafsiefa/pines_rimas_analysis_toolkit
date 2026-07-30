@@ -1304,7 +1304,7 @@ def synthetic_image_maker(x_centroids, y_centroids, filter, fwhm=2.5):
         synthetic_image = np.zeros((925, 925))
     elif filter=='H' or filter=='K':
         synthetic_image = np.zeros((1000, 925))
-    sigma = fwhm/2.355
+    sigma = fwhm#/2.355
     for i in range(len(x_centroids)):
         # Cut out little boxes around each source and add in Gaussian representations. This saves time.
         int_centroid_x = int(np.round(x_centroids[i]))
