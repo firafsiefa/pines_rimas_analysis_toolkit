@@ -130,7 +130,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
         An astropy Table with the colums X, Y, flux, flux_error, mag,
         and mag_err measurements for each of the sources.
     """
-    exptime = header['EXPTIME']
+    exptime = header['EXPTIMEC']
 
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError(
@@ -265,7 +265,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
     mask = data_segm.make_source_mask()
 
     # Pass the data with sources masked out to the bg calculator.
-    bg_phot = aperture_stats_tbl(~mask*data, bg_apertures, sigma_clip=True)
+    bg_phot = aperture_stats_tbl(mask*data, bg_apertures, sigma_clip=True)
     ap_area = phot_apertures.area
 
     bg_method_name = 'aperture_{}'.format(bg_method)
@@ -476,6 +476,7 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.
             band = 'YJ'
         else:
             band = 'HK'
+
         master_dark_stddev = master_dark_stddev_chooser(pines_path/('Calibrations/Darks/Master Darks Stddev/'), band, header)
 
         date = pat.utils.mimir_date_reader(header)
@@ -2317,7 +2318,7 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
         reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
     else:
         reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter+'_nobg')
-        
+
     sources_path = pines_path/('Objects/'+short_name+'/sources/'+filter)
     if not os.path.exists(sources_path):
         os.mkdir(sources_path)
