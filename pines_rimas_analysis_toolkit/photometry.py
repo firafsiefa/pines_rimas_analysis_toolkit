@@ -472,7 +472,11 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.
         
         # Get the closest date master_dark_stddev image for this exposure time.
         # We'll use this to measure read noise and dark current.
-        master_dark_stddev = master_dark_stddev_chooser(pines_path/('Calibrations/Darks/Master Darks Stddev/'), filter, header)
+        if filter == 'J' or filter=='Y':
+            band = 'YJ'
+        else:
+            band = 'HK'
+        master_dark_stddev = master_dark_stddev_chooser(pines_path/('Calibrations/Darks/Master Darks Stddev/'), band, header)
 
         date = pat.utils.mimir_date_reader(header)
         jd = julian.to_jd(date)
