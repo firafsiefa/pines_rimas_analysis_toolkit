@@ -557,8 +557,8 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 y_seeing = np.nanmedian(y_seeing_array)
             else:
                 # Default to the average PINES value if no sources were found for guiding.
-                x_seeing = 2.6
-                y_seeing = 2.6
+                x_seeing = 1.5
+                y_seeing = 1.5
 
             print('Log line {} of {}.'.format(i+1, len(log)))
             print('Measured x shift: {:4.1f}, measured y shift: {:4.1f}'.format(
@@ -597,8 +597,8 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 for line in lines:
                     f.write(line)
 
-        elif (log['Post-processing flag'][i] == 1):
-            print('File already post-processed, skipping. {} of {}'.format(i+1, len(log)))
+        #elif (log['Post-processing flag'][i] == 1):
+         #   print('File already post-processed, skipping. {} of {}'.format(i+1, len(log)))
         else:
             print('File not a science target, skipping. {} of {}.'.format(
                 i+1, len(log)))
