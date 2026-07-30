@@ -574,10 +574,10 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             print('')
 
             # Overwrite the telescope's logged shifts and seeing values with the new measurements.
-            log.loc[log_ind, 'X shift'] = str(round(float(measured_x_shift), 1))
-            log.loc[log_ind, 'Y shift'] = str(round(float(measured_y_shift), 1))
-            log.loc[log_ind, 'X seeing'] = str(np.round(x_seeing, 1))
-            log.loc[log_ind, 'Y seeing'] = str(np.round(y_seeing, 1))
+            log.loc[log_ind, 'X shift'] = np.round(measured_x_shift, 1)
+            log.loc[log_ind, 'Y shift'] = np.round(measured_y_shift, 1)
+            log.loc[log_ind, 'X seeing'] = np.round(x_seeing, 1)
+            log.loc[log_ind, 'Y seeing'] = np.round(y_seeing, 1)
 
             # Grab entries for log line.
             filename = log['Filename'][log_ind]
