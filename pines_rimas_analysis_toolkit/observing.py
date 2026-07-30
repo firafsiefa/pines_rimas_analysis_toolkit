@@ -462,10 +462,10 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     :type force_output_path: str, optional
     """
 
-    def tie_sigma(model):
-        return model.x_stddev_1
-
     def guide_star_seeing(guide_subframe):
+        def tie_sigma(model):
+            return model.x_stddev_1
+
         # subframe = subframe - np.median(subframe)
         subframe = guide_subframe - np.percentile(guide_subframe, 5)
         sub_frame_l = int(np.shape(subframe)[0])
@@ -480,14 +480,12 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
         gaussian_init.y_stddev_1.max = 20.0/2.355
         gaussian_init.y_stddev_1.tied = tie_sigma
         gaussian_init.theta_1.fixed = True
-        fit_gauss = fitting.FittingWithOutlierRemoval(
-            fitting.LevMarLSQFitter(), sigma_clip, niter=3, sigma=3.0)
+        fit_gauss = fitting.FittingWithOutlierRemoval(fitting.LevMarLSQFitter(), sigma_clip, niter=3, sigma=3.0)
         # gaussian, mask = fit_gauss(gaussian_init, x, y, subframe)
         gain = 1.8  # e per ADU
         read_noise = 2.43  # ADU
         # 1/sigma for each pixel
-        weights = gain / np.sqrt(np.absolute(subframe)
-                                 * gain + (read_noise*gain)**2)
+        weights = gain / np.sqrt((np.absolute(subframe)* gain) + (read_noise*gain)**2)
         gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights, filter_non_finite=True)
         fwhm_x = 2.355*gaussian.x_stddev_1.value
         fwhm_y = 2.355*gaussian.y_stddev_1.value
