@@ -38,7 +38,7 @@ pd.options.mode.chained_assignment = None  # Suppress some useless warnings.
 matplotlib.use('TkAgg')
 plt.ion()
 
-def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=False):
+def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=3.5, plot=False):
     """Finds sources in a Mimir image.
 
     :param image_path: path to the image
@@ -103,8 +103,8 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     bad_x = np.where((initial_sources['x_centroid'] < edge_tolerance) | (
         initial_sources['x_centroid'] > 925-edge_tolerance))[0]
     initial_sources.remove_rows(bad_x)
-    bad_y = np.where((initial_sources['ycentroid'] < edge_tolerance) | (
-        initial_sources['ycentroid'] > 925-edge_tolerance))[0]
+    bad_y = np.where((initial_sources['y_centroid'] < edge_tolerance) | (
+        initial_sources['y_centroid'] > 925-edge_tolerance))[0]
     initial_sources.remove_rows(bad_y)
     '''
     # Cut sources near y = 512, these are frequently bad.
