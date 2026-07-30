@@ -260,7 +260,7 @@ def pines_login():
                 print('ERROR: login failed after {} tries.'.format(i))
 
 
-def profile_reader(short_name, force_output_path=''):
+def profile_reader(short_name, filter, guess_position_x, guess_position_y, force_output_path=''):
     """Reads in data from a target's .profile file.
 
     :param short_name: the short name of the target
@@ -275,7 +275,7 @@ def profile_reader(short_name, force_output_path=''):
     else:
         pines_path = pines_dir_check()    
 
-    profile_path = pines_path/('Objects/'+short_name+'/'+short_name.replace(' ', '').lower()+'.profile')
+    profile_path = pines_path/('Objects/'+short_name+'_rimas/'+short_name.replace(' ', '').lower()+'_rimas_'+filter+'.profile')
 
     reduced_top_level_path = profile_path.parent/'reduced'
     reduced_sub_dirs = [Path(i) for i in glob(str(reduced_top_level_path)+'/*')]
@@ -284,7 +284,7 @@ def profile_reader(short_name, force_output_path=''):
     if not os.path.exists(profile_path):
         print('{} does not exist, creating profile file with default params!'.format(
             profile_path.name))
-        pines_path = pat.utils.pines_dir_check()
+        pines_path = pines_dir_check()
 
         #Best SNR in J, so try that first. 
         if 'J' in reduced_filters:
@@ -309,15 +309,13 @@ def profile_reader(short_name, force_output_path=''):
 
 
         source_detect_image = red_images[40].split('/')[-1]
-        source_detect_filter = use_filter
-        exclude_lower_left = 'False'
-        dimness_tolerance = '0.40'
+        source_detect_filter = filter
+        exclude_lower_left = False
+        dimness_tolerance = '0.05'
         brightness_tolerance = '3.0'
         distance_from_target = '900'
-        non_linear_limit = '3750'
+        non_linear_limit = '45000'
         edge_tolerance = '40'
-        guess_position_x = '700'
-        guess_position_y = '382'
 
         line = 'source_detect_image  = {}\nsource_detect_filter = {}\nexclude_lower_left   = {}\ndimness_tolerance    = {}\nbrightness_tolerance = {}\ndistance_from_target = {}\nnon_linear_limit     = {}\nedge_tolerance       = {}\nguess_position_x     = {}\nguess_position_y     = {}'.format(
             source_detect_image, source_detect_filter, exclude_lower_left, dimness_tolerance, brightness_tolerance, distance_from_target, non_linear_limit, edge_tolerance, guess_position_x, guess_position_y)
@@ -334,7 +332,7 @@ def profile_reader(short_name, force_output_path=''):
 
     output_dict = {'source_detect_image': df['source_detect_image'].iloc[0].strip(),
                    'source_detect_filter': df['source_detect_filter'].iloc[0].strip(),
-                   #'exclude_lower_left': bool(distutils.util.strtobool(df['exclude_lower_left'].iloc[0].strip())),
+                   'exclude_lower_left': df['exclude_lower_left'].iloc[0].strip(), #bool(distutils.util.strtobool(
                    'dimness_tolerance': float(df['dimness_tolerance'].iloc[0]),
                    'brightness_tolerance': float(df['brightness_tolerance'].iloc[0]),
                    'distance_from_target': float(df['distance_from_target'].iloc[0]),
