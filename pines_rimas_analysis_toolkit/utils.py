@@ -275,7 +275,7 @@ def profile_reader(short_name, filter, guess_position_x, guess_position_y, force
     else:
         pines_path = pines_dir_check()    
 
-    profile_path = pines_path/('Objects/'+short_name+'_rimas/'+short_name.replace(' ', '').lower()+'_rimas_'+filter+'.profile')
+    profile_path = pines_path/('Objects/'+short_name+'/'+short_name.replace(' ', '').lower()+'_'+filter+'.profile')
 
     reduced_top_level_path = profile_path.parent/'reduced'
     reduced_sub_dirs = [Path(i) for i in glob(str(reduced_top_level_path)+'/*')]
