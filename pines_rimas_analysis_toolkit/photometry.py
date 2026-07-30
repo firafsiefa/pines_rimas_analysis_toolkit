@@ -2119,8 +2119,8 @@ def target_finder(sources, guess_position):
     :return: target ID
     :rtype: int
     """
-    distances = np.sqrt((guess_position[0] - sources['xcenter'])
-                        ** 2 + (guess_position[1] - sources['ycenter'])**2)
+    distances = np.sqrt((guess_position[0] - sources['x_center'])
+                        ** 2 + (guess_position[1] - sources['y_center'])**2)
     target_id = np.where(distances == np.min(distances))[0][0]
     return target_id
 
