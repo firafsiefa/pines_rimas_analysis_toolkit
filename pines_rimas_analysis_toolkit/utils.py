@@ -332,7 +332,7 @@ def profile_reader(short_name, filter, guess_position_x, guess_position_y, force
 
     output_dict = {'source_detect_image': df['source_detect_image'].iloc[0].strip(),
                    'source_detect_filter': df['source_detect_filter'].iloc[0].strip(),
-                   'exclude_lower_left': df['exclude_lower_left'].iloc[0].strip(), #bool(distutils.util.strtobool(
+                   'exclude_lower_left': eval(df['exclude_lower_left'].iloc[0].strip()), #bool(distutils.util.strtobool(
                    'dimness_tolerance': float(df['dimness_tolerance'].iloc[0]),
                    'brightness_tolerance': float(df['brightness_tolerance'].iloc[0]),
                    'distance_from_target': float(df['distance_from_target'].iloc[0]),
