@@ -610,7 +610,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     return
 
 
-def master_synthetic_image_creator(target, date, star_pos, filter, image_name, pines_path, seeing=2.5, sigma_above_bg=5.):
+def master_synthetic_image_creator(target, date, star_pos, filter, image_name, pines_path, seeing=1, sigma_above_bg=5.):
     """Creates a master synthetic image for a PINES target by detecting sources in a reduced image of the field.
 
     :param target: long name of the target
