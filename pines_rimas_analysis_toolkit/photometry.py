@@ -1963,7 +1963,7 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
             dists = []
             for j in range(len(sources)):
                 dists.append(np.sqrt((sources['x_center'][i]-sources['x_center'][j])**2+(
-                    sources['ycenter'][i]-sources['ycenter'][j])**2))
+                    sources['y_center'][i]-sources['y_center'][j])**2))
             dists = np.array(dists)
 
             # Check if potential ref is near non-linear regime.
