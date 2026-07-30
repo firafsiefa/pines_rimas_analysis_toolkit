@@ -55,7 +55,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     :rtype: pandas DataFrame
     """
 
-    fwhm = seeing_fwhm/0.579  # FIXED
+    fwhm = seeing_fwhm/0.19  # FIXED
 
     # Radius of aperture in pixels for doing quick photometry on detected sources.
     ap_rad = 7
@@ -156,14 +156,14 @@ def seeing(log_path):
         seeing = seeing[np.where((seeing > 1.2) & (seeing < 7.0))[0]]
         return seeing
         
-def seeing_measurer(object_path, box_w=30, plate_scale=0.579, plots=False):
+def seeing_measurer(object_path, box_w=30, plate_scale=0.19, plots=False):
     """Remeasures seeing for all reduced file for the target, and saves a seeing.csv file to the sources directory.
 
     :param object_path: path to the object directory
     :type object_path: pathlib.PosixPath
     :param box_w: width of boxes to use for measuring source FWHMs, defaults to 30
     :type box_w: int, optional
-    :param plate_scale: plate scale of the detector in ''/pixel, defaults to 0.579
+    :param plate_scale: plate scale of the detector in ''/pixel, defaults to 0.19
     :type plate_scale: float, optional
     :param plots: whether or not to make plots of the fitted gaussians, defaults to False
     :type plots: bool, optional
@@ -219,7 +219,7 @@ def seeing_measurer(object_path, box_w=30, plate_scale=0.579, plots=False):
             gaussian_init.y_stddev_1.tied = tie_sigma
             gaussian_init.theta_1.fixed = True
             fit_gauss = fitting.FittingWithOutlierRemoval(fitting.LevMarLSQFitter(),sigma_clip,niter=3,sigma=3.0)
-            gain = 8.21 #e per ADU
+            gain = 1.8 #e per ADU
             read_noise = 19 #ADU
             weights = gain / np.sqrt(np.absolute(cutout)*gain + (read_noise*gain)**2) #1/sigma for each pixel
 
@@ -482,7 +482,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
         fit_gauss = fitting.FittingWithOutlierRemoval(
             fitting.LevMarLSQFitter(), sigma_clip, niter=3, sigma=3.0)
         # gaussian, mask = fit_gauss(gaussian_init, x, y, subframe)
-        gain = 8.21  # e per ADU
+        gain = 1.8  # e per ADU
         read_noise = 2.43  # ADU
         # 1/sigma for each pixel
         weights = gain / np.sqrt(np.absolute(subframe)
@@ -491,8 +491,8 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
         fwhm_x = 2.355*gaussian.x_stddev_1.value
         fwhm_y = 2.355*gaussian.y_stddev_1.value
 
-        x_seeing = fwhm_x * 0.579
-        y_seeing = fwhm_y * 0.579
+        x_seeing = fwhm_x * 0.19
+        y_seeing = fwhm_y * 0.19
         return(x_seeing, y_seeing)
 
     if force_output_path != '':
@@ -610,7 +610,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     return
 
 
-def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_bg=5.):
+def master_synthetic_image_creator(target, date, star_pos, filter, image_name, pines_path, seeing=2.5, sigma_above_bg=5.):
     """Creates a master synthetic image for a PINES target by detecting sources in a reduced image of the field.
 
     :param target: long name of the target
@@ -623,7 +623,7 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
     :type sigma_above_bg: float, optional
     """
 
-    def mimir_source_finder(image_path, sigma_above_bg, fwhm, exclude_lower_left=False):
+    def mimir_source_finder(image_path, sigma_above_bg, fwhm, star_pos, exclude_lower_left=False):
         """Find sources in Mimir images."""
 
         np.seterr(all='ignore')  # Ignore invalids (i.e. divide by zeros)
@@ -632,7 +632,7 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
         avg, med, stddev = sigma_clipped_stats(
             image, sigma=3.0, maxiters=3)  # Previously maxiters = 5!
         daofind = DAOStarFinder(
-            fwhm=fwhm, threshold=sigma_above_bg*stddev, sky=med, ratio=0.8)
+            fwhm=fwhm, threshold=sigma_above_bg*stddev, sky=med, ratio=0.8, xycoords=star_pos)
         new_sources = daofind(image)
         x_centroids = new_sources['xcentroid']
         y_centroids = new_sources['ycentroid']
@@ -640,14 +640,14 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
         fluxes = new_sources['flux']
         peaks = new_sources['peak']
 
-        # Cut sources that are found within 20 pix of the edges.
-        use_x = np.where((x_centroids > 20) & (x_centroids < 1004))[0]
+        # Cut sources that are found within 40 pix of the edges.
+        use_x = np.where((x_centroids > 40) & (x_centroids < 960))[0]
         x_centroids = x_centroids[use_x]
         y_centroids = y_centroids[use_x]
         sharpness = sharpness[use_x]
         fluxes = fluxes[use_x]
         peaks = peaks[use_x]
-        use_y = np.where((y_centroids > 20) & (y_centroids < 1004))[0]
+        use_y = np.where((y_centroids > 40) & (y_centroids < 960))[0]
         x_centroids = x_centroids[use_y]
         y_centroids = y_centroids[use_y]
         sharpness = sharpness[use_y]
@@ -670,7 +670,7 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
             sharpness = sharpness[use_ll]
             fluxes = fluxes[use_ll]
             peaks = peaks[use_ll]
-
+        '''
         # Cut targets whose y centroids are near y = 512. These are usually bad.
         use_512 = np.where(np.logical_or(
             (y_centroids < 510), (y_centroids > 514)))[0]
@@ -679,9 +679,9 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
         sharpness = sharpness[use_512]
         fluxes = fluxes[use_512]
         peaks = peaks[use_512]
-
+        '''
         # Cut sources with negative/saturated peaks
-        use_peaks = np.where((peaks > 30) & (peaks < 3000))[0]
+        use_peaks = np.where((peaks > 30) & (peaks < 50000))[0]
         x_centroids = x_centroids[use_peaks]
         y_centroids = y_centroids[use_peaks]
         sharpness = sharpness[use_peaks]
@@ -691,7 +691,7 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
         # Do quick photometry on the remaining sources.
         positions = [(x_centroids[i], y_centroids[i])
                      for i in range(len(x_centroids))]
-        apertures = CircularAperture(positions, r=4)
+        apertures = CircularAperture(positions, r=6)
         phot_table = aperture_photometry(image-med, apertures)
 
         # Cut based on brightness.
@@ -705,10 +705,14 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
 
         return(x_centroids, y_centroids)
 
-    def synthetic_image_maker(x_centroids, y_centroids, fwhm):
+    def synthetic_image_maker(x_centroids, y_centroids, fwhm, filter):
         # Construct synthetic images from centroid/flux data.
-        synthetic_image = np.zeros((1024, 1024))
-        sigma = fwhm/2.355
+        if filter=='Y' or filter=='J':
+            synthetic_image = np.zeros((925, 925))
+        else:
+            synthetic_image = np.zeros((1000, 925))
+        
+        sigma = fwhm#/2.355
         for i in range(len(x_centroids)):
             # Cut out little boxes around each source and add in Gaussian representations. This saves time.
             int_centroid_x = int(np.round(x_centroids[i]))
@@ -720,15 +724,15 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
                 (dist)**2/(2*sigma**2)+((dist)**2/(2*sigma**2))))
         return(synthetic_image)
 
-    pines_path = pines_dir_check()
+    pines_path = pines_path#pines_dir_check()
     short_name = short_name_creator(target)
     master_synthetic_path = pines_path / \
-        ('Calibrations/Master Synthetic Images/'+target+'_master_synthetic.fits')
-    image_path = pines_path/('Objects/'+short_name+'/reduced/'+image_name)
+        ('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_master_synthetic.fits')
+    image_path = pines_path/('Calibrations/Master Images/'+date+'/'+filter+'/reduced/'+image_name)
     plt.ion()
 
     seeing = float(seeing)
-    daostarfinder_fwhm = seeing*2.355/0.579
+    daostarfinder_fwhm = seeing*2.355/0.19
 
     # Open the image and calibration files.
     header = fits.open(image_path)[0].header
@@ -750,10 +754,11 @@ def master_synthetic_image_creator(target, image_name, seeing=2.5, sigma_above_b
 
     # Find sources in the image.
     (x_centroids, y_centroids) = mimir_source_finder(
-        image, sigma_above_bg=sigma_above_bg, fwhm=daostarfinder_fwhm)
+        image, sigma_above_bg=sigma_above_bg, fwhm=daostarfinder_fwhm, star_pos=star_pos)
 
     # Plot the field with detected sources.
     qp(image)
+    plt.imshow(image, origin='lower', vmin=med, vmax=med+5*std)
     plt.plot(x_centroids, y_centroids, 'rx')
     for i in range(len(x_centroids)):
         plt.text(x_centroids[i]+8, y_centroids[i] +
