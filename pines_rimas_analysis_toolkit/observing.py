@@ -503,7 +503,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     log_path = pines_path/('Logs/'+date+'_log.txt')
 
     # Begin by checking filenames, making sure they're in sequential order, and that there is only one entry for each.
-    log_out_of_order_fixer(log_path, sftp)
+    #log_out_of_order_fixer(log_path, sftp)
 
     log = pines_log_reader(log_path)  # Get telescope log shifts.
     myfile = open(log_path, 'r')
