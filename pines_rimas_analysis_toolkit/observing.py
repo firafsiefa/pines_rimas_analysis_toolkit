@@ -543,7 +543,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 shift_quality_flag = 0
 
             # Measure the seeing.
-            '''
+            
             guide_star_cut = np.where((source_x > 50) & (
                 source_x < 925) & (source_y > 50) & (source_y < 925))[0]
             if len(guide_star_cut) != 0:
@@ -562,10 +562,10 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 x_seeing = np.nanmedian(x_seeing_array)
                 y_seeing = np.nanmedian(y_seeing_array)
             else:
-                '''
-            # Default to the average PINES value if no sources were found for guiding.
-            x_seeing = 1.5
-            y_seeing = 1.5
+                
+                # Default to the average PINES value if no sources were found for guiding.
+                x_seeing = 1.5
+                y_seeing = 1.5
 
             print('Log line {} of {}.'.format(i+1, len(log)))
             print('Measured x shift: {:4.1f}, measured y shift: {:4.1f}'.format(
@@ -574,8 +574,8 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             print('')
 
             # Overwrite the telescope's logged shifts and seeing values with the new measurements.
-            log.loc[log_ind, 'X shift'] = str(np.round(float(measured_x_shift), 1))
-            log.loc[log_ind, 'Y shift'] = str(np.round(float(measured_y_shift), 1))
+            log.loc[log_ind, 'X shift'] = str(round(float(measured_x_shift), 1))
+            log.loc[log_ind, 'Y shift'] = str(round(float(measured_y_shift), 1))
             log.loc[log_ind, 'X seeing'] = str(np.round(x_seeing, 1))
             log.loc[log_ind, 'Y seeing'] = str(np.round(y_seeing, 1))
 
@@ -1293,7 +1293,7 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
     #print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
     #print('')
 
-    return (float(x_shift), float(-y_shift), source_x, source_y, check_image)
+    return (x_shift, -y_shift, source_x, source_y, check_image)
 
 
 def synthetic_image_maker(x_centroids, y_centroids, filter, fwhm=2.5):
