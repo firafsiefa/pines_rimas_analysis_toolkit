@@ -141,8 +141,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
     interpolation_flags = np.zeros(len(phot_apertures.positions), dtype='bool')
     
     #TESTING, REMOVE LATER!!!
-    target_pixel = (421, 864)
-    save_val = data[target_pixel[1], target_pixel[0]]
+    #target_pixel = (421, 864)
+    #save_val = data[target_pixel[1], target_pixel[0]]
 
     
     # #NEW!! Joint PSF fitting approach
@@ -164,7 +164,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
         x_cutout = x_pos - np.floor(x_pos - cutout_w)
         y_cutout = y_pos - np.floor(y_pos - cutout_w)
         ap = CircularAperture((x_cutout, y_cutout), r=phot_apertures.r)
-
+    '''
         if i == 3:
             
             an = CircularAnnulus((x_cutout, y_cutout), r_in=12, r_out=30)
@@ -183,7 +183,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, hea
 
             #Rebuild the cutout. 
             cutout = data[int((y_pos-cutout_w)):int(y_pos+cutout_w)+1, int(x_pos-cutout_w):int(x_pos+cutout_w)+1]
-
+    '''
 
         # Cut out the pixels JUST inside the aperture, and check if there are NaNs there. If so, interpolate over NaNs in the cutout.
         ap_mask = ap.to_mask(method='exact')
