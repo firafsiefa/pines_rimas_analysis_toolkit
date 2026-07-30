@@ -1918,7 +1918,7 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
 
 
     # Detect sources in the image.
-    sources = detect_sources(source_detect_image_path, source_detect_seeing, positions
+    sources = detect_sources(source_detect_image_path, source_detect_seeing, positions,
                              edge_tolerance, plot=source_detect_plot, thresh=3.0)
 
     # Identify the target in the image using guess_position.
