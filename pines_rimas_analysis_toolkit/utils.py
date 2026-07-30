@@ -206,7 +206,7 @@ def pines_log_reader(path):
     return df
 
 def mimir_date_reader(header):
-    date_obs = header['DATE-OBS']
+    date_obs = header['DATE']
     # Catch a case that can cause datetime strptime to crash; Mimir headers sometimes have DATE-OBS with seconds specified as 010.xx seconds, when it should be 10.xx seconds.
     if len(date_obs.split(':')[-1].split('.')[0]) == 3:
         date_obs = date_obs.split(
