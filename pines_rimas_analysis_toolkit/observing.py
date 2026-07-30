@@ -796,7 +796,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
 
     # Create the synthetic image using the accepted sources.
     synthetic_image = synthetic_image_maker(
-        x_centroids[ids_to_keep], y_centroids[ids_to_keep], 8, filter)
+        x_centroids[ids_to_keep], y_centroids[ids_to_keep], daostarfinder_fwhm, filter)
     plt.figure(figsize=(9, 7))
     plt.imshow(synthetic_image, origin='lower')
     plt.title('Synthetic image')
