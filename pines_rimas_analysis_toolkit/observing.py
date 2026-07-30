@@ -567,10 +567,10 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             print('')
 
             # Overwrite the telescope's logged shifts and seeing values with the new measurements.
-            log['X shift'][log_ind] = str(np.round(measured_x_shift, 1))
-            log['Y shift'][log_ind] = str(np.round(measured_y_shift, 1))
-            log['X seeing'][log_ind] = str(np.round(x_seeing, 1))
-            log['Y seeing'][log_ind] = str(np.round(y_seeing, 1))
+            log.loc[log_ind, 'X shift'] = str(np.round(measured_x_shift, 1))
+            log.loc[log_ind, 'Y shift'] = str(np.round(measured_y_shift, 1))
+            log.loc[log_ind, 'X seeing'] = str(np.round(x_seeing, 1))
+            log.loc[log_ind, 'Y seeing'] = str(np.round(y_seeing, 1))
 
             # Grab entries for log line.
             filename = log['Filename'][log_ind]
@@ -1286,7 +1286,7 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
     #print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
     # print('')
 
-    return (x_shift, -y_shift, source_x, source_y, check_image)
+    return (float(x_shift), float(-y_shift), source_x, source_y, check_image)
 
 
 def synthetic_image_maker(x_centroids, y_centroids, filter, fwhm=2.5):
