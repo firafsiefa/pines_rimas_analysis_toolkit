@@ -1184,7 +1184,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
     for j in range(len(reduced_files)):
         file = reduced_files[j]
         header = fits.open(file)[0].header
-        time_str = fits.open(file)[0].header['DATE-OBS']
+        time_str = fits.open(file)[0].header['DATE']
 
         # Correct some formatting issues that can occur in Mimir time stamps.
         if time_str.split(':')[-1] == '60.00':
@@ -1201,7 +1201,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
         jd = julian.to_jd(datetime.datetime.strptime(time_str, time_fmt))
         centroid_df['Time JD UTC'][j] = jd
         centroid_df['Time BJD TDB'][j] = jd_utc_to_bjd_tdb(
-            jd, header['TELRA'], header['TELDEC'])
+            jd, header['RA'], header['DEC'])
 
     # From times, generate night and block numbers.
     night_inds = night_splitter(centroid_df['Time BJD TDB'])
@@ -1218,8 +1218,9 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
         # And append to the all_block_inds list
         all_block_inds.extend(np.concatenate(night_block_numbers).ravel())
     for j in range(len(reduced_files)):
-        centroid_df['Night Number'][j] = all_night_inds[j]
-        centroid_df['Block Number'][j] = all_block_inds[j]
+        centroid_df.loc[j, 'Filename'] = str(reduced_files[j])[-16:]
+        centroid_df.loc[j, 'Night Number'] = all_night_inds[j]
+        centroid_df.loc[j, 'Block Number'] = all_block_inds[j]
 
     # Measure centroids for each tracked source i in each image j.
     for i in range(len(sources)):
@@ -1293,7 +1294,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
             cutout = SegmentationImage(cutout[edge_shave:len(cutout)-edge_shave, edge_shave:len(cutout)-edge_shave].astype(int))
             cutout = np.array(cutout)
     
-            if len(cutout[0]) == 0:
+            if len(cutout)==0 or len(cutout[0]) == 0:
                 continue
 
             # #Check for cosmic rays in the cutout. 
@@ -1388,10 +1389,10 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
                     'NaN returned from centroid algorithm, defaulting to target position in source_detct_image.')
 
             # Record the image and relative cutout positions.
-            centroid_df[sources['Name'][i]+' Image X'][j] = centroid_x
-            centroid_df[sources['Name'][i]+' Image Y'][j] = centroid_y
-            centroid_df[sources['Name'][i]+' Cutout X'][j] = relative_x_cutout #save coutout as fraction of box_w
-            centroid_df[sources['Name'][i]+' Cutout Y'][j] = relative_y_cutout
+            centroid_df.loc[j, sources['Name'][i]+' Image X'] = centroid_x
+            centroid_df.loc[j, sources['Name'][i]+' Image Y'] = centroid_y
+            centroid_df.loc[j, sources['Name'][i]+' Cutout X'] = relative_x_cutout #save coutout as fraction of box_w
+            centroid_df.loc[j, sources['Name'][i]+' Cutout Y'] = relative_y_cutout
 
             if output_plots:
                 # Plot
@@ -2263,3 +2264,399 @@ def cutout_array_creator(image, x_c, y_c, cutout_w=11):
         cutout = image[int(y_c[i]-cutout_w):int(y_c[i]+cutout_w), int(x_c[i]-cutout_w):int(x_c[i]+cutout_w)]
         cutout_array[i] = cutout
     return cutout_array
+
+def centroider_FF(short_name, sources, filter='', output_plots=False, restore=False, box_w=16, force_output_path='', bin_mins=0.0, shift_tolerance=2.0, time_threshold=0.10):
+    """Measures pixel positions of sources in a set of reduced images.
+
+    :param short_name: the target's short name
+    :type short_name: str
+    :param sources: dataframe of source names and pixel positions, output from ref_star_chooser
+    :type sources: pandas DataFrame
+    :param filter: the filter you want to get centroids for. Use '' to get centroids for all data. 
+    :type filter: str
+    :param output_plots: whether or not to save cutouts of the measured pixel positions, defaults to False
+    :type output_plots: bool, optional
+    :param restore: whether or not to restore centroid output from a previous run, defaults to False
+    :type restore: bool, optional
+    :param box_w: the size in pixels of the cutouts used for centroiding, defaults to 16
+    :type box_w: int, optional
+    :param force_output_path: the top-level path if you don't want to use the default ~/Documents/PINES_analysis_toolkit/ directory for analysis, defaults to ''
+    :type force_output_path: str, optional
+    :param bin_mins: number of minutes to bin data for staring observations, defaults to 0.0
+    :type bin_mins: float, optional
+    :param shift_tolerance: number of pixels in x/y a measured source centroid can be from the expected position before alternate methods are tried
+    :type shift_tolerance: float, optional
+    :return: Saves csv of centroid positions for every source
+    :rtype: csv
+    """
+    # Turn off warnings from Astropy because they're incredibly annoying.
+    warnings.simplefilter("ignore", category=AstropyUserWarning)
+
+    #Gaussian filter cutouts for better centroiding SNR
+    kernel = Gaussian2DKernel(x_stddev=0.2) 
+
+    matplotlib.use('TkAgg')
+    plt.ioff()
+    t1 = time.time()
+
+    if force_output_path != '':
+        pines_path = force_output_path
+    else:
+        pines_path = pines_dir_check()
+
+    kernel = Gaussian2DKernel(x_stddev=1)  # For fixing nans in cutouts.
+    
+    reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
+    sources_path = pines_path/('Objects/'+short_name+'/sources/'+filter)
+    if not os.path.exists(sources_path):
+        os.mkdir(sources_path)
+    
+    # If restore == True, read in existing output and return.
+    if restore:
+        centroid_df = pd.read_csv(pines_path/('Objects/'+short_name+'/sources/'+filter+'/target_and_references_centroids.csv'),
+                                  converters={'X Centroids': eval, 'Y Centroids': eval})
+        print('Restoring centroider output from {}.'.format(
+            pines_path/('Objects/'+short_name+'/sources/'+filter+'/target_and_references_centroids.csv')))
+        print('')
+        return centroid_df
+
+    # Create subdirectories in sources folder to contain output plots.
+    if output_plots:
+        subdirs = glob(str(pines_path/('Objects/'+short_name+'/sources/'+filter))+'/*/')
+        # Delete any source directories that are already there.
+        for name in subdirs:
+            shutil.rmtree(name)
+
+        # Create new source directories.
+        for name in sources['Name']:
+            source_path = (pines_path/('Objects/'+short_name+'/sources/'+filter+'/'+name+'/'))
+            os.mkdir(source_path)
+
+    # Read in extra shifts, in case the master image wasn't used for source detection.
+    extra_shift_path = pines_path / ('Objects/'+short_name+'/sources/extra_shifts.txt')
+    extra_shifts = pd.read_csv(extra_shift_path, delimiter=' ', names=['Extra X shift', 'Extra Y shift'])
+    extra_x_shift = extra_shifts['Extra X shift'][0]
+    extra_y_shift = extra_shifts['Extra Y shift'][0]
+
+    # Suppress some warnings we don't care about in median combining.
+    np.seterr(divide='ignore', invalid='ignore')
+
+    # Get list of reduced files for target.
+    reduced_filenames = natsorted([x.name for x in reduced_path.glob('*red.fits')])
+    reduced_files = np.array([reduced_path/i for i in reduced_filenames])
+
+    # Declare a new dataframe to hold the centroid information for all sources we want to track.
+    columns = ['Filename', 'Time JD UTC', 'Time BJD TDB', 'Night Number', 'Block Number', 'Filter', 'Seeing', 'Airmass']
+
+    # Add x/y positions and cenroid flags for every tracked source
+    for i in range(0, len(sources)):
+        columns.append(sources['Name'][i]+' Image X')
+        columns.append(sources['Name'][i]+' Image Y')
+        columns.append(sources['Name'][i]+' Cutout X')
+        columns.append(sources['Name'][i]+' Cutout Y')
+        columns.append(sources['Name'][i]+' Centroid Warning')
+
+    centroid_df = pd.DataFrame(index=range(len(reduced_files)), columns=columns)
+
+    log_path = pines_path/('Logs/')
+    log_dates = np.array(natsorted([x.name.split('_')[0] for x in log_path.glob('*.txt')]))
+
+    # Make sure we have logs for all the nights of these data. Need them to account for image shifts.
+    nights = list(set([i.name.split('.')[0] for i in reduced_files]))
+    for i in nights:
+        if i not in log_dates:
+            print('ERROR: {} not in {}. Download it from the PINES server.'.format(
+                i+'_log.txt', log_path))
+            breakpoint()
+
+    # Get times before the main loop.
+    for j in range(len(reduced_files)):
+        file = reduced_files[j]
+        header = fits.open(file)[0].header
+        time_str = fits.open(file)[0].header['DATE']
+
+        # Correct some formatting issues that can occur in Mimir time stamps.
+        if time_str.split(':')[-1] == '60.00':
+            time_str = time_str[0:14] + \
+                str(int(time_str.split(':')[-2])+1)+':00.00'
+        elif time_str.split(':')[-1] == '010.00':
+            time_str = time_str[0:17]+time_str.split(':')[-1][1:]
+
+        if '.' not in time_str:
+            time_fmt = '%Y-%m-%dT%H:%M:%S'
+        else:
+            time_fmt = '%Y-%m-%dT%H:%M:%S.%f'
+
+        jd = julian.to_jd(datetime.datetime.strptime(time_str, time_fmt))
+        centroid_df['Time JD UTC'][j] = jd
+        centroid_df['Time BJD TDB'][j] = jd_utc_to_bjd_tdb(
+            jd, header['RA'], header['DEC'])
+
+    # From times, generate night and block numbers.
+    night_inds = night_splitter(centroid_df['Time BJD TDB'])
+    all_night_inds = np.concatenate([np.zeros(
+        len(night_inds[i]), dtype='int')+i+1 for i in range(len(night_inds))]).ravel()
+    all_block_inds = []
+    # On each night...
+    for k in range(len(night_inds)):
+        # Generate block indices...
+        block_inds = block_splitter(centroid_df['Time BJD TDB'][night_inds[k]], bin_mins=bin_mins, time_threshold=time_threshold)
+        # Convert them to block numbers...
+        night_block_numbers = [
+            np.zeros(10, dtype='int')+i+1 for i in range(len(block_inds))]
+        # And append to the all_block_inds list
+        all_block_inds.extend(np.concatenate(night_block_numbers).ravel())
+    for j in range(len(reduced_files)):
+        centroid_df.loc[j, 'Filename'] = str(reduced_files[j])[-16:]
+        centroid_df.loc[j, 'Night Number'] = all_night_inds[j]
+        centroid_df.loc[j, 'Block Number'] = all_block_inds[j]
+
+    # Measure centroids for each tracked source i in each image j.
+    for i in range(len(sources)):
+        # Get the initial source position.
+        x_pos = sources['Source Detect X'][i]
+        y_pos = sources['Source Detect Y'][i]
+        print('')
+        print('Getting centroids for {}, ({:3.1f}, {:3.1f}) in source detection image. Source {} of {}.'.format(
+            sources['Name'][i], x_pos, y_pos, i+1, len(sources)))
+        if output_plots:
+            print('Saving centroid plots to {}.'.format(pines_path /
+                  ('Objects/'+short_name+'/sources/'+sources['Name'][i]+'/')))
+        pbar = ProgressBar()
+        for j in pbar(range(len(reduced_files))):
+            centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 0
+            file = reduced_files[j]
+            image = fits.open(file)[0].data
+            header = fits.open(file)[0].header
+
+            # Get the measured image shift for this image.
+            log = pines_log_reader(log_path/(file.name.split('.')[0]+'_log.txt'))
+            log_ind = np.where(log['Filename'] == file.name.split('_')[0]+'.fits')[0][0]
+
+            x_shift = float(log['X shift'][log_ind])
+            y_shift = float(log['Y shift'][log_ind])
+
+            # Save the filename for readability. Save the seeing for use in variable aperture photometry. Save the time for diagnostic plots.
+            if i == 0:
+                centroid_df['Filename'][j] = file.name.split('_')[0]+'.fits'
+                centroid_df['Seeing'][j] = log['X seeing'][log_ind]
+                centroid_df['Airmass'][j] = log['Airmass'][log_ind]
+                centroid_df['Filter'][j] = log['Filt.'][log_ind]
+
+            # Flag indicating if you should not trust the log's shifts. Set to true if x_shift/y_shift are 'nan' or > 30 pixels.
+            nan_flag = False
+
+            # If bad shifts were measured for this image, skip.
+            if log['Shift quality flag'][log_ind] == 1:
+                continue
+
+            if np.isnan(x_shift) or np.isnan(y_shift):
+                x_shift = 0
+                y_shift = 0
+                nan_flag = True
+
+            # If there are clouds, shifts could have been erroneously high...just zero them?
+            if abs(x_shift) > 200:
+                #x_shift = 0
+                nan_flag = True
+            if abs(y_shift) > 200:
+                #y_shift = 0
+                nan_flag = True
+
+            # Apply the shift. NOTE: This relies on having accurate x_shift and y_shift values from the log.
+            # If they're incorrect, the cutout will not be in the right place.
+            #x_pos = sources['Source Detect X'][i] - x_shift + extra_x_shift
+            #y_pos = sources['Source Detect Y'][i] + y_shift - extra_y_shift
+
+            x_pos = sources['Source Detect X'][i] - (x_shift - extra_x_shift)
+            y_pos = sources['Source Detect Y'][i] + (y_shift - extra_y_shift)
+
+            # TODO: Make all this its own function.
+
+            # Cutout around the expected position and interpolate over any NaNs (which screw up source detection).
+            cutout = interpolate_replace_nans(image[int(y_pos-box_w/2):int(y_pos+box_w/2)+1,int(x_pos-box_w/2):int(x_pos+box_w/2)+1], kernel=Gaussian2DKernel(x_stddev=0.5))
+            
+            # interpolate_replace_nans struggles with edge pixels, so shave off edge_shave pixels in each direction of the cutout.
+            edge_shave = 1
+            cutout = cutout.astype(int)
+            cutout[cutout < 0] = 0
+            cutout = SegmentationImage(cutout[edge_shave:len(cutout)-edge_shave, edge_shave:len(cutout)-edge_shave].astype(int))
+            cutout = np.array(cutout)
+    
+            if len(cutout)==0 or len(cutout[0]) == 0:
+                continue
+
+            # #Check for cosmic rays in the cutout. 
+            # avg, med, std = sigma_clipped_stats(cutout, sigma=4)
+            # counts, bins = np.histogram(cutout.flatten(), bins=20)
+            # mode = bins[np.where(counts == max(counts))[0][0]]
+            # gap_threshold = 3*std
+            # zero_count_bins = np.where(counts == 0)[0]
+            # def consecutive(data, stepsize=1):
+            #     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+            # consecutive_zero_count_bins = consecutive(zero_count_bins)
+
+            # if np.max([len(i) for i in consecutive_zero_count_bins]) > 1:
+            #     for v in range(len(consecutive_zero_count_bins)):
+            #         start = consecutive_zero_count_bins[v][0]
+            #         end = consecutive_zero_count_bins[v][-1]+1
+            #         gap = bins[end]-bins[start]
+            #         if gap > gap_threshold:
+            #             breakpoint()
+
+            #Smooth the cutout with a 2D Gaussian filter for better centroiding SNR.
+            cutout = convolve(cutout, kernel, boundary='wrap')
+
+            # Get sigma clipped     stats on the cutout
+            vals, lower, upper = sigmaclip(cutout, low=1.5, high=2.5)
+            med = np.nanmedian(vals)
+
+            # cs = centroid_sources(cutout-med, (box_w-edge_shave)/2, (box_w-edge_shave)/2)
+
+            # centroid_x_cutout = cs[0][0]
+            # centroid_y_cutout = cs[1][0]
+
+            g = centroid_2dg(cutout-med)
+            centroid_x_cutout = g[0]
+            centroid_y_cutout = g[1]
+            
+            relative_x_cutout = centroid_x_cutout / (box_w-edge_shave)
+            relative_y_cutout = centroid_y_cutout / (box_w-edge_shave)
+            
+            if (abs(relative_x_cutout - 0.5) > 1) or (abs(relative_y_cutout - 0.5) > 1):
+                #breakpoint()
+                centroid_x_cutout = (box_w-edge_shave)/2
+                centroid_y_cutout = (box_w-edge_shave)/2
+                
+            # Translate the detected centroid from the cutout coordinates back to the full-frame coordinates.
+            centroid_x = centroid_x_cutout + int(x_pos) - box_w/2 + edge_shave
+            centroid_y = centroid_y_cutout + int(y_pos) - box_w/2 + edge_shave
+
+            #Make sure you found a centroid in the cutout.
+            if (centroid_x_cutout < 0) or (centroid_x_cutout > cutout.shape[1]) or (centroid_y_cutout < 0) or (centroid_y_cutout > cutout.shape[0]):
+                print('Centroid found outside of cutout, returning expected position.')
+                centroid_x_cutout = cutout.shape[1]/2
+                centroid_y_cutout = cutout.shape[0]/2
+                centroid_x = x_pos
+                centroid_y = y_pos
+            
+            
+            # Check that your measured position is actually on the detector.
+            if (centroid_x < 0) or (centroid_y < 0) or (centroid_x > image.shape[1]) or (centroid_y > image.shape[0]):
+                # Try a quick mask/interpolation of the cutout.
+                cutout = cutout.astype(int)
+                cutout[cutout < 0] = 0
+                cutout = SegmentationImage(cutout)
+                mask = cutout.make_source_mask()
+                cutout = np.array(cutout).astype(float)
+                vals, lo, hi = sigmaclip(cutout[~mask])
+                bad_locs = np.where((mask == False) & (
+                    (cutout > hi) | (cutout < lo)))
+                cutout[bad_locs] = np.nan
+                cutout = interpolate_replace_nans(
+                    cutout, kernel=Gaussian2DKernel(x_stddev=0.5))
+                centroid_x, centroid_y = centroid_2dg(cutout - med)
+                centroid_x += int(x_pos) - box_w
+                centroid_y += int(y_pos) - box_w
+                if (centroid_x < 0) or (centroid_y < 0) or (centroid_x > 1023) or (centroid_y > 1023):
+                    print(
+                        'WARNING: large centroid deviation measured, returning predicted position')
+                    print('')
+                    centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 1
+                    centroid_x = x_pos
+                    centroid_y = y_pos
+                    # breakpoint()
+
+            # Check to make sure you didn't measure nan's.
+            if np.isnan(centroid_x):
+                centroid_x = x_pos
+                print(
+                    'NaN returned from centroid algorithm, defaulting to target position in source_detect_image.')
+            if np.isnan(centroid_y):
+                centroid_y = y_pos
+                print(
+                    'NaN returned from centroid algorithm, defaulting to target position in source_detct_image.')
+
+            # Record the image and relative cutout positions.
+            centroid_df.loc[j, sources['Name'][i]+' Image X'] = centroid_x
+            centroid_df.loc[j, sources['Name'][i]+' Image Y'] = centroid_y
+            centroid_df.loc[j, sources['Name'][i]+' Cutout X'] = relative_x_cutout #save coutout as fraction of box_w
+            centroid_df.loc[j, sources['Name'][i]+' Cutout Y'] = relative_y_cutout
+
+            if output_plots:
+                # Plot
+                lock_x = int(centroid_df[sources['Name'][i]+' Image X'][0])
+                lock_y = int(centroid_df[sources['Name'][i]+' Image Y'][0])
+                norm = ImageNormalize(data=cutout, interval=ZScaleInterval())
+                plt.imshow(cutout, origin='lower', norm=norm)
+                plt.plot(centroid_x_cutout, centroid_y_cutout, 'rx')
+                ap = CircularAperture((centroid_x_cutout, centroid_y_cutout), r=5)
+                ap.plot(lw=2, color='b')
+                #plt.ylim(lock_y-box_w/2, lock_y+box_w/2-1)
+                #plt.xlim(lock_x-box_w/2, lock_x+box_w/2-1)
+                plt.title('CENTROID DIAGNOSTIC PLOT\n'+sources['Name'][i]+', '+reduced_files[j].name+' (image '+str(
+                    j+1)+' of '+str(len(reduced_files))+')', fontsize=10)
+                plt.text(centroid_x_cutout, centroid_y_cutout+0.5, '('+str(np.round(centroid_x_cutout, 1)) +
+                         ', '+str(np.round(centroid_y_cutout, 1))+')', color='r', ha='center')
+                plot_output_path = (pines_path/('Objects/'+short_name+'/sources/'+filter+'/'+sources['Name'][i]+'/'+file.name.split('_')[0]+'_night_'+str(centroid_df['Night Number'][j]).zfill(2)+'_block_'+str(centroid_df['Block Number'][j]).zfill(2)+'.jpg'))
+                plt.gca().set_axis_off()
+                plt.subplots_adjust(top=1, bottom=0, right=1,
+                                    left=0, hspace=0, wspace=0)
+                plt.margins(0, 0)
+                plt.gca().xaxis.set_major_locator(plt.NullLocator())
+                plt.gca().yaxis.set_major_locator(plt.NullLocator())
+                plt.savefig(plot_output_path, bbox_inches='tight',
+                            pad_inches=0, dpi=150)
+                plt.close()
+
+    output_filename = pines_path / ('Objects/'+short_name+'/sources/'+filter+'/target_and_references_centroids.csv')
+
+    print('Saving centroiding output to {}.'.format(output_filename))
+    with open(output_filename, 'w') as f:
+        for j in range(len(centroid_df)):
+            # Write the header line.
+            if j == 0:
+                f.write('{:<17s}, '.format('Filename'))
+                f.write('{:<15s}, '.format('Time JD UTC'))
+                f.write('{:<15s}, '.format('Time BJD TDB'))
+                f.write('{:<15s}, '.format('Night Number'))
+                f.write('{:<15s}, '.format('Block Number'))
+                f.write('{:<6s}, '.format('Filter'))
+                f.write('{:<6s}, '.format('Seeing'))
+                f.write('{:<7s}, '.format('Airmass'))
+                for i in range(len(sources['Name'])):
+                    n = sources['Name'][i]
+                    if i != len(sources['Name']) - 1:
+                        f.write('{:<23s}, {:<23s}, {:<24s}, {:<24s}, {:<34s}, '.format(
+                            n+' Image X', n+' Image Y', n+' Cutout X', n+' Cutout Y',  n+' Centroid Warning'))
+                    else:
+                        f.write('{:<23s}, {:<23s}, {:<24s}, {:<24s}, {:<34s}\n'.format(
+                            n+' Image X', n+' Image Y', n+' Cutout X', n+' Cutout Y',  n+' Centroid Warning'))
+
+            # Write in the data lines.
+            try:
+                f.write('{:<17s}, '.format(centroid_df['Filename'][j]))
+                f.write('{:<15.7f}, '.format(centroid_df['Time JD UTC'][j]))
+                f.write('{:<15.7f}, '.format(centroid_df['Time BJD TDB'][j]))
+                f.write('{:<15d}, '.format(centroid_df['Night Number'][j]))
+                f.write('{:<15d}, '.format(centroid_df['Block Number'][j]))
+                f.write('{:<6s}, '.format(centroid_df['Filter'][j]))
+                f.write('{:<6.1f}, '.format(float(centroid_df['Seeing'][j])))
+                f.write('{:<7.2f}, '.format(centroid_df['Airmass'][j]))
+            except:
+                breakpoint()
+
+            for i in range(len(sources['Name'])):
+                n = sources['Name'][i]
+                if i != len(sources['Name']) - 1:
+                    format_string = '{:<23.4f}, {:<23.4f}, {:<24.4f}, {:<24.4f}, {:<34d}, '
+                else:
+                    format_string = '{:<23.4f}, {:<23.4f}, {:<24.4f}, {:<24.4f}, {:<34d}\n'
+
+                f.write(format_string.format(centroid_df[n+' Image X'][j], centroid_df[n+' Image Y'][j],
+                        centroid_df[n+' Cutout X'][j], centroid_df[n+' Cutout Y'][j], centroid_df[n+' Centroid Warning'][j]))
+    np.seterr(divide='warn', invalid='warn')
+    print('')
+    print('centroider runtime: {:.2f} minutes.'.format((time.time()-t1)/60))
+    print('')
+    return centroid_df
