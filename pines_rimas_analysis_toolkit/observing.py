@@ -1284,8 +1284,8 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
                               check_synthetic_image[::-1, ::-1])
 
     (x_shift, y_shift) = corr_shift_determination(corr, filter)
-    #print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
-    # print('')
+    print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
+    print('')
 
     return (float(x_shift), float(-y_shift), source_x, source_y, check_image)
 
