@@ -444,46 +444,6 @@ def log_out_of_order_fixer(log_path, sftp):
 
     return
 
-def guide_star_seeing(guide_subframe):
-    from astropy.modeling import models, fitting
-    from astropy.stats import sigma_clip, sigma_clipped_stats, SigmaClip
-
-    def tie_sigma(model):
-        return model.x_stddev_1
-
-    # subframe = subframe - np.median(subframe)
-    subframe = guide_subframe - np.percentile(guide_subframe, 5)
-    sub_frame_l = int(np.shape(subframe)[0])
-    y, x = np.mgrid[:sub_frame_l, :sub_frame_l]
-
-    # Fit with constant, bounds, tied x and y sigmas and outlier rejection:
-    gaussian_init = models.Const2D(0.0) + models.Gaussian2D(subframe[int(sub_frame_l/2), int(
-        sub_frame_l/2)], int(sub_frame_l/2), int(sub_frame_l/2), 8/2.355, 8/2.355, 0)
-    gaussian_init.x_stddev_1.min = 1.0/2.355
-    gaussian_init.x_stddev_1.max = 20.0/2.355
-    gaussian_init.y_stddev_1.min = 1.0/2.355
-    gaussian_init.y_stddev_1.max = 20.0/2.355
-    gaussian_init.y_stddev_1.tied = tie_sigma
-    gaussian_init.theta_1.fixed = True
-    fit_gauss = fitting.FittingWithOutlierRemoval(fitting.LevMarLSQFitter(), sigma_clip, niter=3, sigma=3.0)
-    # gaussian, mask = fit_gauss(gaussian_init, x, y, subframe)
-    gain = 1.8  # e per ADU
-    read_noise = 2.43  # ADU
-    # 1/sigma for each pixel
-    weights = gain / np.sqrt((np.absolute(subframe)* gain) + (read_noise*gain)**2)
-    gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights, filter_non_finite=True)
-    
-    print(gaussian_init)
-    print(x, y)
-    print(subframe)
-    print(weights)
-    fwhm_x = 2.355*gaussian.x_stddev_1.value
-    fwhm_y = 2.355*gaussian.y_stddev_1.value
-
-    x_seeing = fwhm_x * 0.19
-    y_seeing = fwhm_y * 0.19
-
-    return(x_seeing, y_seeing)
 
 def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path='', skip=''):
     """Updates x_shift and y_shift measurements from a PINES log. These shifts are measured using *full* resolution images, while at the telescope,
@@ -501,6 +461,38 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     :param force_output_path: user-chosen path if you do not want to use the default ~/Documents/PINES_analysis_toolkit/ directory for analysis, defaults to ''
     :type force_output_path: str, optional
     """
+
+    def tie_sigma(model):
+        return model.x_stddev_1
+
+    def guide_star_seeing(guide_subframe):
+        # subframe = subframe - np.median(subframe)
+        subframe = guide_subframe - np.percentile(guide_subframe[~np.isnan(guide_subframe)], 5)
+        sub_frame_l = int(np.shape(subframe)[0])
+        y, x = np.mgrid[:sub_frame_l, :sub_frame_l]
+
+        # Fit with constant, bounds, tied x and y sigmas and outlier rejection:
+        gaussian_init = models.Const2D(0.0) + models.Gaussian2D(subframe[int(sub_frame_l/2), int(
+            sub_frame_l/2)], int(sub_frame_l/2), int(sub_frame_l/2), 8/2.355, 8/2.355, 0)
+        gaussian_init.x_stddev_1.min = 1.0/2.355
+        gaussian_init.x_stddev_1.max = 20.0/2.355
+        gaussian_init.y_stddev_1.min = 1.0/2.355
+        gaussian_init.y_stddev_1.max = 20.0/2.355
+        gaussian_init.y_stddev_1.tied = tie_sigma
+        gaussian_init.theta_1.fixed = True
+        fit_gauss = fitting.FittingWithOutlierRemoval(fitting.LevMarLSQFitter(), sigma_clip, niter=3, sigma=3.0)
+        # gaussian, mask = fit_gauss(gaussian_init, x, y, subframe)
+        gain = 1.8  # e per ADU
+        read_noise = 2.43  # ADU
+        # 1/sigma for each pixel
+        weights = gain / np.sqrt((np.absolute(subframe)* gain) + (read_noise*gain)**2)
+        gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights, filter_non_finite=True)
+        fwhm_x = 2.355*gaussian.x_stddev_1.value
+        fwhm_y = 2.355*gaussian.y_stddev_1.value
+
+        x_seeing = fwhm_x * 0.19
+        y_seeing = fwhm_y * 0.19
+        return(x_seeing, y_seeing)
 
     if force_output_path != '':
         pines_path = force_output_path
