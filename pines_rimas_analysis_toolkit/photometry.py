@@ -106,7 +106,7 @@ def date_to_jd(year, month, day):
     return jd
 
 
-def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, header, seeing, bg_method='mean', epadu=1.0, gain=8.21, non_linear_threshold=4000):
+def iraf_style_photometry(phot_apertures, bg_apertures, data, dark_std_data, header, seeing, bg_method='mean', epadu=1.0, gain=1.9, non_linear_threshold=45000):
     """Computes photometry with PhotUtils apertures, with IRAF formulae
     Parameters
     ----------
@@ -400,7 +400,7 @@ def calc_aperture_mmm(data, mask, sigma_clip):
         return (mean, median, mode, std, actual_area)
 
 
-def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=8.21, qe=0.9, force_output_path=''):
+def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.8, qe=0.9, force_output_path=''):
     '''Authors:
                 Patrick Tamburo, Boston University, June 2020
         Purpose:
@@ -477,27 +477,27 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=8.
         date = pat.utils.mimir_date_reader(header)
         jd = julian.to_jd(date)
         filename = reduced_files[j].name
-        time_ut = header['DATE-OBS']
-        time_bjd = jd_utc_to_bjd_tdb(jd, header['TELRA'], header['TELDEC'])
+        time_ut = header['DATE']
+        time_bjd = jd_utc_to_bjd_tdb(jd, header['RA'], header['DEC'])
         night_number = centroided_sources['Night Number'][j]
         block_number = centroided_sources['Block Number'][j]
-        exptime = header['EXPTIME']
-        airmass = header['AIRMASS']
-        filter = header['FILTNME2']
+        exptime = header['EXPTIMEC']
+        airmass = log['Airmass'][log_ind]
+        filter = filter
         seeing = log['X seeing'][log_ind]
         for i in range(len(ap_radii)):
             ap_df = ap_dfs[i] 
-            ap_df['Filename'][j] = filename
-            ap_df['Time UT'][j] = time_ut
-            ap_df['Time JD UTC'][j] = jd
+            ap_df.loc[j, 'Filename'] = filename
+            ap_df.loc[j, 'Time UT'] = time_ut
+            ap_df.loc[j, 'Time JD UTC'] = jd
             # Using the telescope ra and dec should be accurate enough for our purposes
-            ap_df['Time BJD TDB'][j] = time_bjd
-            ap_df['Night Number'][j] = night_number
-            ap_df['Block Number'][j] = block_number
-            ap_df['Filter'][j] = filter
-            ap_df['Exptime'][j] = exptime
-            ap_df['Airmass'][j] = airmass
-            ap_df['Seeing'][j] = seeing
+            ap_df.loc[j, 'Time BJD TDB'] = time_bjd
+            ap_df.loc[j, 'Night Number'] = night_number
+            ap_df.loc[j, 'Block Number'] = block_number
+            ap_df.loc[j, 'Filter'] = filter
+            ap_df.loc[j, 'Exptime'] = exptime
+            ap_df.loc[j, 'Airmass'] = airmass
+            ap_df.loc[j, 'Seeing'] = seeing
 
         # If the shift quality has been flagged, skip this image.
         if log['Shift quality flag'].iloc[log_ind] == 1:
@@ -518,10 +518,10 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=8.
             photometry_tbl = iraf_style_photometry(apertures, annuli, data*gain, master_dark_stddev*gain, header, ap_df['Seeing'][j])
 
             for k in range(len(source_names)):
-                ap_df[source_names[k]+ ' Flux'][j] = photometry_tbl['flux'][k]
-                ap_df[source_names[k] + ' Flux Error'][j] = photometry_tbl['flux_error'][k]
-                ap_df[source_names[k] + ' Background'][j] = photometry_tbl['background'][k]
-                ap_df[source_names[k]+ ' Interpolation Flag'][j] = int(photometry_tbl['interpolation_flag'][k])
+                ap_df.loc[k, source_names[k]+ ' Flux'][j] = photometry_tbl['flux']
+                ap_df.loc[k,source_names[k] + ' Flux Error'][j] = photometry_tbl['flux_error']
+                ap_df.loc[k,source_names[k] + ' Background'][j] = photometry_tbl['background']
+                ap_df.loc[k,source_names[k]+ ' Interpolation Flag'][j] = int(photometry_tbl['interpolation_flag'])
     
     for i in range(len(ap_radii)):
         ap_df = ap_dfs[i]
@@ -551,7 +551,7 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=8.
                 # If the seeing value for this image is 'nan' (a string), convert it to a float.
                 # TODO: Not sure why it's being read in as a string, fix that.
                 if type(ap_df['Seeing'][j]) == str:
-                    ap_df['Seeing'][j] = float(ap_df['Seeing'][j])
+                    ap_df.loc[j, 'Seeing'] = float(ap_df['Seeing'][j])
 
                 # Do a try/except clause for writeout, in case it breaks in the future.
                 try:
@@ -583,7 +583,7 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=8.
         print('')
     return
 
-def variable_aper_phot(short_name, multiplicative_factors, filter, an_in=12., an_out=30., plots=False, gain=8.21, qe=0.9, plate_scale=0.579, force_output_path='', smoothing_size=5, bin_mins=0.0, time_threshold=0.1):
+def variable_aper_phot(short_name, multiplicative_factors, filter, an_in=12., an_out=30., plots=False, gain=1.8, qe=0.9, plate_scale=0.19, force_output_path='', smoothing_size=5, bin_mins=0.0, time_threshold=0.1):
     plt.ioff()
 
     if force_output_path != '':
@@ -1199,8 +1199,8 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
             time_fmt = '%Y-%m-%dT%H:%M:%S.%f'
 
         jd = julian.to_jd(datetime.datetime.strptime(time_str, time_fmt))
-        centroid_df['Time JD UTC'][j] = jd
-        centroid_df['Time BJD TDB'][j] = jd_utc_to_bjd_tdb(
+        centroid_df.loc[j, 'Time JD UTC'] = jd
+        centroid_df.loc[j, 'Time BJD TDB'] = jd_utc_to_bjd_tdb(
             jd, header['RA'], header['DEC'])
 
     # From times, generate night and block numbers.
@@ -1235,7 +1235,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
                   ('Objects/'+short_name+'/sources/'+sources['Name'][i]+'/')))
         pbar = ProgressBar()
         for j in pbar(range(len(reduced_files))):
-            centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 0
+            centroid_df[j, sources['Name'][i]+' Centroid Warning'] = 0
             file = reduced_files[j]
             image = fits.open(file)[0].data
             header = fits.open(file)[0].header
@@ -1249,10 +1249,10 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
 
             # Save the filename for readability. Save the seeing for use in variable aperture photometry. Save the time for diagnostic plots.
             if i == 0:
-                centroid_df['Filename'][j] = file.name.split('_')[0]+'.fits'
-                centroid_df['Seeing'][j] = log['X seeing'][log_ind]
-                centroid_df['Airmass'][j] = log['Airmass'][log_ind]
-                centroid_df['Filter'][j] = log['Filt.'][log_ind]
+                centroid_df.loc[j, 'Filename'] = file.name.split('_')[0]+'.fits'
+                centroid_df.loc[j, 'Seeing'] = log['X seeing'][log_ind]
+                centroid_df.loc[j, 'Airmass'] = log['Airmass'][log_ind]
+                centroid_df.loc[j, 'Filter'] = log['Filt.'][log_ind]
 
             # Flag indicating if you should not trust the log's shifts. Set to true if x_shift/y_shift are 'nan' or > 30 pixels.
             nan_flag = False
@@ -1373,7 +1373,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
                     print(
                         'WARNING: large centroid deviation measured, returning predicted position')
                     print('')
-                    centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 1
+                    centroid_df[j, sources['Name'][i]+' Centroid Warning'] = 1
                     centroid_x = x_pos
                     centroid_y = y_pos
                     # breakpoint()
@@ -1396,8 +1396,8 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
 
             if output_plots:
                 # Plot
-                lock_x = int(centroid_df[sources['Name'][i]+' Image X'][0])
-                lock_y = int(centroid_df[sources['Name'][i]+' Image Y'][0])
+                lock_x = int(centroid_df[0, sources['Name'][i]+' Image X'])
+                lock_y = int(centroid_df[0, sources['Name'][i]+' Image Y'])
                 norm = ImageNormalize(data=cutout, interval=ZScaleInterval())
                 plt.imshow(cutout, origin='lower', norm=norm)
                 plt.plot(centroid_x_cutout, centroid_y_cutout, 'rx')
@@ -2138,7 +2138,7 @@ def twoD_Gaussian(x, y, sigma_x, sigma_y, rho, x_cen, y_cen, amplitude, offset):
     
     return offset + amplitude * np.exp(-ln_Gaussian/2.0)
 
-def joint_psf_fitter(cutouts, gain=8.21, plate_scale=0.579):
+def joint_psf_fitter(cutouts, gain=1.8, plate_scale=0.19):
     '''Does a 2D gaussian fit jointly to a set of image cutouts (n_stars x nxpix x nypix)
     '''
     #Inner fit fits a single star with sigma and rho fixed
@@ -2562,7 +2562,7 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
                     print(
                         'WARNING: large centroid deviation measured, returning predicted position')
                     print('')
-                    centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 1
+                    centroid_df[j, sources['Name'][i]+' Centroid Warning'] = 1
                     centroid_x = x_pos
                     centroid_y = y_pos
                     # breakpoint()
