@@ -58,7 +58,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     fwhm = seeing_fwhm/0.19  # FIXED
 
     # Radius of aperture in pixels for doing quick photometry on detected sources.
-    ap_rad = 7
+    ap_rad = 10
 
     # Read in the image.
     image = fits.open(image_path)[0].data
@@ -90,7 +90,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     print('Finding sources in {}.'.format(image_path.name))
 
     # Detect sources using DAOStarFinder.
-    daofind = DAOStarFinder(fwhm=fwhm, threshold=thresh*std, sharplo=0.2)
+    daofind = DAOStarFinder(fwhm=fwhm, threshold=thresh*std, sharpness_range=(0.2, 1.0))
 
     initial_sources = daofind(image - med)
 
@@ -100,13 +100,13 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     initial_sources.remove_rows(bad_sharpness_locs)
 
     # Cut sources that are found within edge_tolerance pix of the edges.
-    bad_x = np.where((initial_sources['xcentroid'] < edge_tolerance) | (
-        initial_sources['xcentroid'] > 1023-edge_tolerance))[0]
+    bad_x = np.where((initial_sources['x_centroid'] < edge_tolerance) | (
+        initial_sources['x_centroid'] > 925-edge_tolerance))[0]
     initial_sources.remove_rows(bad_x)
     bad_y = np.where((initial_sources['ycentroid'] < edge_tolerance) | (
-        initial_sources['ycentroid'] > 1023-edge_tolerance))[0]
+        initial_sources['ycentroid'] > 925-edge_tolerance))[0]
     initial_sources.remove_rows(bad_y)
-
+    '''
     # Cut sources near y = 512, these are frequently bad.
     bad_512 = np.where((initial_sources['ycentroid'] > 506) & (
         initial_sources['ycentroid'] < 518))
@@ -116,9 +116,9 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     bad_ski_jump = np.where((initial_sources['ycentroid'] < 100) | (
         initial_sources['ycentroid'] > 924))
     initial_sources.remove_rows(bad_ski_jump)
-
+    '''
     # Do quick photometry on the remaining sources.
-    positions = [(initial_sources['xcentroid'][i], initial_sources['ycentroid'][i])
+    positions = [(initial_sources['x_centroid'][i], initial_sources['y_centroid'][i])
                  for i in range(len(initial_sources))]
     apertures = CircularAperture(positions, r=ap_rad)
     phot_table = aperture_photometry(image-med, apertures)
@@ -796,7 +796,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
 
     # Create the synthetic image using the accepted sources.
     synthetic_image = synthetic_image_maker(
-        x_centroids[ids_to_keep], y_centroids[ids_to_keep], 8, filter)
+        x_centroids[ids_to_keep], y_centroids[ids_to_keep], daostarfinder_fwhm, filter)
     plt.figure(figsize=(9, 7))
     plt.imshow(synthetic_image, origin='lower')
     plt.title('Synthetic image')
@@ -1240,10 +1240,10 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
             seeing = np.nanmedian(
                 np.array(log['X seeing'][ind-5:ind], dtype='float'))
         else:
-            seeing = 2.6
+            seeing = 1.2
 
     # Find sources in the image.
-    sources = detect_sources(image_path, seeing, edge_tolerance=10, thresh=3.5)
+    sources = detect_sources(image_path, seeing, edge_tolerance=1, thresh=3.5)
 
     # Comb the returned sources and cut any that are too close to another one.
     # This can happen if the actual seeing differs from that recorded in the log.
