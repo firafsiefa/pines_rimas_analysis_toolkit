@@ -792,15 +792,15 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
     for i in range(len(x_centroids[ids_to_keep])):
         plt.text(x_centroids[ids_to_keep][i]+8,
                  y_centroids[ids_to_keep][i]+8, str(i), color='r')
+    plt.savefig('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_final.png')
 
     # Create the synthetic image using the accepted sources.
     synthetic_image = synthetic_image_maker(
         x_centroids[ids_to_keep], y_centroids[ids_to_keep], 8, filter)
     plt.figure(figsize=(9, 7))
-    plt.imshow(image, origin='lower')
+    plt.imshow(synthetic_image, origin='lower')
     plt.title('Synthetic image')
     plt.show()
-    plt.savefig('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_final.png')
 
     #pdb.set_trace()
     print('')
