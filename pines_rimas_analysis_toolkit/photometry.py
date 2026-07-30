@@ -1120,8 +1120,11 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
         pines_path = pines_dir_check()
 
     kernel = Gaussian2DKernel(x_stddev=1)  # For fixing nans in cutouts.
-    
-    reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
+    if filter == 'Y' or filter=="J":
+        reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
+    else:
+        reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter+'_nobg')
+
     sources_path = pines_path/('Objects/'+short_name+'/sources/'+filter)
     if not os.path.exists(sources_path):
         os.mkdir(sources_path)
@@ -2310,7 +2313,11 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
 
     kernel = Gaussian2DKernel(x_stddev=1)  # For fixing nans in cutouts.
     
-    reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
+    if filter == 'Y' or filter=="J":
+        reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
+    else:
+        reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter+'_nobg')
+        
     sources_path = pines_path/('Objects/'+short_name+'/sources/'+filter)
     if not os.path.exists(sources_path):
         os.mkdir(sources_path)
