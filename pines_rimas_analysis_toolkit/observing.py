@@ -516,7 +516,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             filename = log['Filename'][i].split('.fits')[0]+'_red.fits'
             target = log['Target'][i]
             filter = log['Filt.'][i]
-            short_name = short_name_creator(target.split(' J')[0]+target.split(' J')[1])
+            short_name = short_name_creator(target.replace(' ', ''))#.split(' J')[0]+target.split(' J')[1])
             image_path = pines_path / ('Objects/'+short_name+'_rimas/reduced/'+filter+'/'+filename)
 
             # Figure out which file you're looking at and its position in the log.
