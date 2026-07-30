@@ -446,6 +446,7 @@ def log_out_of_order_fixer(log_path, sftp):
 
 def guide_star_seeing(guide_subframe):
     from astropy.modeling import models, fitting
+    from astropy.stats import sigma_clip, sigma_clipped_stats, SigmaClip
 
     def tie_sigma(model):
         return model.x_stddev_1
