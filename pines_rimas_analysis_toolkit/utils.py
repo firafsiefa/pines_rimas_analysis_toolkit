@@ -293,11 +293,11 @@ def profile_reader(short_name, filter, guess_position_x, guess_position_y, force
             red_images = np.array(natsorted(glob(str(red_path)+'/*.fits')))
             use_filter = 'J'
         #Second-best SNR in Ks.  
-        elif 'Ks' in reduced_filters:
-            ind = np.where(np.array(reduced_filters) == 'Ks')[0][0]
+        elif 'K' in reduced_filters:
+            ind = np.where(np.array(reduced_filters) == 'K')[0][0]
             red_path = reduced_sub_dirs[ind]
             red_images = np.array(natsorted(glob(str(red_path)+'/*.fits')))
-            use_filter = 'Ks'
+            use_filter = 'K'
         #Worst SNR in H
         elif 'H' in reduced_filters:
             ind = np.where(np.array(reduced_filters) == 'H')[0][0]

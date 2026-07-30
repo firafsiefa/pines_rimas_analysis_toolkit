@@ -139,7 +139,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=3.5, plot=Fal
     #print('Found {} sources.'.format(len(phot_table)))
     # Resort remaining sources so that the brightest are listed firsts.
     source = phot_table[::-1].to_pandas()
-    sources = source.loc[source['aperture_sum'] > 0].reset_index()
+    sources = source.loc[source['aperture_sum'] > 0].reset_index(drop=True)
     return sources
 
 def seeing(log_path):

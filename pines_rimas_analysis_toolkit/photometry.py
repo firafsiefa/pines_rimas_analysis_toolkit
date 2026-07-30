@@ -1471,7 +1471,7 @@ def centroider(short_name, sources, filter='', output_plots=False, restore=False
     print('')
     return centroid_df
 
-def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=False):
+def detect_sources(image_path, seeing_fwhm, positions, edge_tolerance, thresh=3.5, plot=False):
     """Finds sources in a Mimir image.
 
     :param image_path: path to the image
@@ -1488,10 +1488,10 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     :rtype: pandas DataFrame
     """
 
-    fwhm = seeing_fwhm/0.579  # FIXED
+    fwhm = seeing_fwhm/0.19  # FIXED
 
     # Radius of aperture in pixels for doing quick photometry on detected sources.
-    ap_rad = 7
+    ap_rad = 10
 
     # Read in the image.
     image = fits.open(image_path)[0].data
@@ -1523,7 +1523,10 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     print('Finding sources in {}.'.format(image_path.name))
 
     # Detect sources using DAOStarFinder.
-    daofind = DAOStarFinder(fwhm=fwhm, threshold=thresh*std, sharplo=0.2)
+    if len(positions) != 0:
+        daofind = DAOStarFinder(fwhm=fwhm, threshold=thresh*std, sharpness_range=(0.2, 0.5), xycoords=positions)
+    else:
+        daofind = DAOStarFinder(fwhm=fwhm, threshold=thresh*std, sharpness_range=(0.2, 0.5))
 
     initial_sources = daofind(image - med)
 
@@ -1531,7 +1534,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     initial_sources.sort('sharpness')
     bad_sharpness_locs = np.where(initial_sources['sharpness'] < 0.3)[0]
     initial_sources.remove_rows(bad_sharpness_locs)
-
+    '''
     # Cut sources that are found within edge_tolerance pix of the edges.
     bad_x = np.where((initial_sources['xcentroid'] < edge_tolerance) | (
         initial_sources['xcentroid'] > 1023-edge_tolerance))[0]
@@ -1549,7 +1552,7 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
     bad_ski_jump = np.where((initial_sources['ycentroid'] < 50) | (
         initial_sources['ycentroid'] > 974))
     initial_sources.remove_rows(bad_ski_jump)
-
+    '''
     # Do quick photometry on the remaining sources.
     positions = [(initial_sources['xcentroid'][i], initial_sources['ycentroid'][i])
                  for i in range(len(initial_sources))]
@@ -1571,7 +1574,8 @@ def detect_sources(image_path, seeing_fwhm, edge_tolerance, thresh=6.0, plot=Fal
 
     #print('Found {} sources.'.format(len(phot_table)))
     # Resort remaining sources so that the brightest are listed firsts.
-    sources = phot_table[::-1].to_pandas()
+    source = phot_table[::-1].to_pandas()
+    sources = source.loc[source['aperture_sum'] > 0].reset_index(drop=True)
     return sources
 
 def epsf_phot(target, centroided_sources, plots=False):
@@ -1841,7 +1845,7 @@ def epsf_phot(target, centroided_sources, plots=False):
     print('')
     return
 
-def ref_star_chooser(short_name, profile_data, restore=False, source_detect_plot=False, force_output_path=''):
+def ref_star_chooser(short_name, profile_data, positions=[], restore=False, source_detect_plot=False, force_output_path=''):
     """Chooses suitable reference stars for a target in a specified source_detect_image.
 
     :param short_name: the short name for the target
@@ -1891,7 +1895,7 @@ def ref_star_chooser(short_name, profile_data, restore=False, source_detect_plot
     source_detect_image_path = pines_path/('Objects/'+short_name+'/reduced/'+source_detect_filter+'/'+source_detect_image)
 
     # Set path to source directory.
-    source_dir = pines_path/('Objects/'+short_name+'/sources/')
+    source_dir = pines_path/('Objects/'+short_name+'/sources/'+source_detect_filter+'/')
 
     source_frame = source_detect_image_path.name.split('_')[0]+'.fits'
     log_name = source_frame.split('.')[0]+'_log.txt'
@@ -1914,7 +1918,7 @@ def ref_star_chooser(short_name, profile_data, restore=False, source_detect_plot
 
 
     # Detect sources in the image.
-    sources = detect_sources(source_detect_image_path, source_detect_seeing,
+    sources = detect_sources(source_detect_image_path, source_detect_seeing, positions
                              edge_tolerance, plot=source_detect_plot, thresh=3.0)
 
     # Identify the target in the image using guess_position.
