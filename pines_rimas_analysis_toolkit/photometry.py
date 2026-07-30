@@ -1569,7 +1569,7 @@ def detect_sources(image_path, seeing_fwhm, positions, edge_tolerance, thresh=3.
     if plot:
         # Plot detected sources.
         # TODO: indicate saturated sources, sources near edge, etc. with different color markers.
-        ax.plot(phot_table['xcenter'], phot_table['ycenter'],
+        ax.plot(phot_table['x_center'], phot_table['y_center'],
                 'ro', markerfacecolor='none')
 
     #print('Found {} sources.'.format(len(phot_table)))
@@ -1935,9 +1935,9 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
     bad_ref_ids = [target_id]
     # Get a value for the brightness of the target with a radius_check aperture. We don't want reference stars dimmer than dimness_tolerance * targ_flux_estimates.
     target_ap = CircularAperture(
-        (sources['xcenter'][target_id], sources['ycenter'][target_id]), r=7)
+        (sources['x_center'][target_id], sources['y_center'][target_id]), r=7)
     target_an = CircularAnnulus(
-        (sources['xcenter'][target_id], sources['ycenter'][target_id]), r_in=12, r_out=30)
+        (sources['x_center'][target_id], sources['y_center'][target_id]), r_in=12, r_out=30)
     mask = target_an.to_mask(method='center')
     an_data = mask.multiply(image)
     an_data_1d = an_data[an_data != 0]
@@ -1948,7 +1948,7 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
 
     for i in range(len(sources)):
         if i != target_id:
-            potential_ref_loc = (sources['xcenter'][i], sources['ycenter'][i])
+            potential_ref_loc = (sources['x_center'][i], sources['y_center'][i])
             ap = CircularAperture(potential_ref_loc, r=7)
             an = CircularAnnulus(potential_ref_loc, r_in=12, r_out=30)
             mask = an.to_mask(method='center')
@@ -1962,7 +1962,7 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
 
             dists = []
             for j in range(len(sources)):
-                dists.append(np.sqrt((sources['xcenter'][i]-sources['xcenter'][j])**2+(
+                dists.append(np.sqrt((sources['x_center'][i]-sources['x_center'][j])**2+(
                     sources['ycenter'][i]-sources['ycenter'][j])**2))
             dists = np.array(dists)
 
@@ -1976,10 +1976,10 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
                                'aperture_sum'] - bg_estimate * ap.area) < brightness_tolerance*targ_flux_estimate)[0]
             #Cut sources that are too close to another
             closeness_flag = (len(np.where(dists[np.where(dists != 0)] < 15)[0]) == 0)
-            proximity_flag = (np.sqrt((sources['xcenter'][target_id]-sources['xcenter'][i])**2+(
-                sources['ycenter'][target_id]-sources['ycenter'][i])**2) < distance_from_target)
+            proximity_flag = (np.sqrt((sources['x_center'][target_id]-sources['x_center'][i])**2+(
+                sources['y_center'][target_id]-sources['y_center'][i])**2) < distance_from_target)
             if exclude_lower_left:
-                if (sources['xcenter'][i] < 512) & (sources['ycenter'][i] < 512):
+                if (sources['x_center'][i] < 512) & (sources['y_center'][i] < 512):
                     lower_left_flag = False
                 else:
                     lower_left_flag = True
@@ -2008,14 +2008,14 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
 
     output_dict = {'Name':[], 'Source Detect X':[], 'Source Detect Y':[]}
     output_dict['Name'].append(short_name)
-    output_dict['Source Detect X'].append(sources['xcenter'][target_id])
-    output_dict['Source Detect Y'].append(sources['ycenter'][target_id])
+    output_dict['Source Detect X'].append(sources['x_center'][target_id])
+    output_dict['Source Detect Y'].append(sources['y_center'][target_id])
 
 
     for i in range(len(suitable_refs)):
         output_dict['Name'].append('Reference '+str(i+1))
-        output_dict['Source Detect X'].append(sources['xcenter'][suitable_ref_ids[i]])
-        output_dict['Source Detect Y'].append(sources['ycenter'][suitable_ref_ids[i]])
+        output_dict['Source Detect X'].append(sources['x_center'][suitable_ref_ids[i]])
+        output_dict['Source Detect Y'].append(sources['y_center'][suitable_ref_ids[i]])
 
     output_df = pd.DataFrame(output_dict)
 
@@ -2037,7 +2037,7 @@ def ref_star_chooser(short_name, profile_data, positions=[], restore=False, sour
                 output_df['Source Detect Y'][i]+5, str(i), fontsize=14, color='r')
     # Plot detected sources
     for i in range(len(sources)):
-        ax.plot(sources['xcenter'], sources['ycenter'], 'rx',
+        ax.plot(sources['x_center'], sources['y_center'], 'rx',
                 label='Detected sources', alpha=0.6, ms=3)
 
     handles, labels = ax.get_legend_handles_labels()
