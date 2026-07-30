@@ -522,10 +522,10 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.
             photometry_tbl = iraf_style_photometry(apertures, annuli, data*gain, master_dark_stddev*gain, header, ap_df['Seeing'][j])
 
             for k in range(len(source_names)):
-                ap_df.loc[k, source_names[k]+ ' Flux'][j] = photometry_tbl['flux']
-                ap_df.loc[k,source_names[k] + ' Flux Error'][j] = photometry_tbl['flux_error']
-                ap_df.loc[k,source_names[k] + ' Background'][j] = photometry_tbl['background']
-                ap_df.loc[k,source_names[k]+ ' Interpolation Flag'][j] = int(photometry_tbl['interpolation_flag'])
+                ap_df.loc[j, source_names[k]+ ' Flux'] = photometry_tbl['flux'][k]
+                ap_df.loc[j, source_names[k] + ' Flux Error'] = photometry_tbl['flux_error'][k]
+                ap_df.loc[j, source_names[k] + ' Background'] = photometry_tbl['background'][k]
+                ap_df.loc[j, source_names[k]+ ' Interpolation Flag'] = int(photometry_tbl['interpolation_flag'][k])
     
     for i in range(len(ap_radii)):
         ap_df = ap_dfs[i]
