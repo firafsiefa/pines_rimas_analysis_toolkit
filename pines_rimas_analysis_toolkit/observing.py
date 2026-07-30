@@ -470,6 +470,10 @@ def guide_star_seeing(guide_subframe):
     weights = gain / np.sqrt((np.absolute(subframe)* gain) + (read_noise*gain)**2)
     gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights, filter_non_finite=True)
     
+    print(gaussian_init)
+    print(x, y)
+    print(subframe)
+    print(weights)
     fwhm_x = 2.355*gaussian.x_stddev_1.value
     fwhm_y = 2.355*gaussian.y_stddev_1.value
 
@@ -477,7 +481,7 @@ def guide_star_seeing(guide_subframe):
     y_seeing = fwhm_y * 0.19
 
     return(x_seeing, y_seeing)
-    
+
 def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path='', skip=''):
     """Updates x_shift and y_shift measurements from a PINES log. These shifts are measured using *full* resolution images, while at the telescope,
         we use *half* resolution images (to save time between exposures). By measuring on full-res images, we get more accurate shifts, which allows 
