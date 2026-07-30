@@ -487,7 +487,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
         # 1/sigma for each pixel
         weights = gain / np.sqrt(np.absolute(subframe)
                                  * gain + (read_noise*gain)**2)
-        gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights)
+        gaussian, mask = fit_gauss(gaussian_init, x, y, subframe, weights, filter_non_finite=True)
         fwhm_x = 2.355*gaussian.x_stddev_1.value
         fwhm_y = 2.355*gaussian.y_stddev_1.value
 
@@ -539,7 +539,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
 
             # Measure the seeing.
             guide_star_cut = np.where((source_x > 50) & (
-                source_x < 975) & (source_y > 50) & (source_y < 975))[0]
+                source_x < 925) & (source_y > 50) & (source_y < 925))[0]
             if len(guide_star_cut) != 0:
                 x_seeing_array = []
                 y_seeing_array = []
@@ -1243,7 +1243,7 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
             seeing = 1.2
 
     # Find sources in the image.
-    sources = detect_sources(image_path, seeing, edge_tolerance=1, thresh=3.5)
+    sources = detect_sources(image_path, seeing*2, edge_tolerance=1, thresh=3.5)
 
     # Comb the returned sources and cut any that are too close to another one.
     # This can happen if the actual seeing differs from that recorded in the log.
