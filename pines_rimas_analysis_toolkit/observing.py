@@ -1276,7 +1276,7 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
     #     plt.plot(source_x, source_y, 'rx')
     #     pdb.set_trace()
 
-    check_synthetic_image = synthetic_image_maker(source_x, source_y)
+    check_synthetic_image = synthetic_image_maker(source_x, source_y, filter)
 
     # Measure the shift between the synthetic images.
     corr = signal.fftconvolve(master_synthetic_image,
