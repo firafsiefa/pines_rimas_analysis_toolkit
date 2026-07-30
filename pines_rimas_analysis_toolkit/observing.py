@@ -465,9 +465,9 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
     def tie_sigma(model):
         return model.x_stddev_1
 
-    def guide_star_seeing(subframe):
+    def guide_star_seeing(guide_subframe):
         # subframe = subframe - np.median(subframe)
-        subframe = subframe - np.percentile(subframe, 5)
+        subframe = guide_subframe - np.percentile(guide_subframe, 5)
         sub_frame_l = int(np.shape(subframe)[0])
         y, x = np.mgrid[:sub_frame_l, :sub_frame_l]
 
@@ -543,7 +543,7 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 shift_quality_flag = 0
 
             # Measure the seeing.
-            '''
+            
             guide_star_cut = np.where((source_x > 50) & (
                 source_x < 925) & (source_y > 50) & (source_y < 925))[0]
             if len(guide_star_cut) != 0:
@@ -562,10 +562,9 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
                 x_seeing = np.nanmedian(x_seeing_array)
                 y_seeing = np.nanmedian(y_seeing_array)
             else:
-            '''
-            # Default to the average PINES value if no sources were found for guiding.
-            x_seeing = 1.5
-            y_seeing = 1.5
+                # Default to the average PINES value if no sources were found for guiding.
+                x_seeing = 1.5
+                y_seeing = 1.5
 
             print('Log line {} of {}.'.format(i+1, len(log)))
             print('Measured x shift: {:4.1f}, measured y shift: {:4.1f}'.format(
