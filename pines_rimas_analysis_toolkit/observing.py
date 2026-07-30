@@ -516,15 +516,15 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             filename = log['Filename'][i].split('.fits')[0]+'_red.fits'
             target = log['Target'][i]
             filter = log['Filt.'][i]
-            short_name = short_name_creator(target)
-            image_path = pines_path / ('Objects/'+short_name+'/reduced/'+filter+'/'+filename)
+            short_name = short_name_creator(target.split(' J')[0]+target.split(' J')[1])
+            image_path = pines_path / ('Objects/'+short_name+'_rimas/reduced/'+filter+'/'+filename)
 
             # Figure out which file you're looking at and its position in the log.
             log_ind = np.where(log['Filename'] == filename.split('_')[0]+'.fits')[0][0]
 
             # Measure the shifts and get positions of targets.
             (measured_x_shift, measured_y_shift, source_x, source_y,
-             check_image) = shift_measurer(target, image_path, force_output_path=pines_path)
+             check_image) = shift_measurer(target, image_path, filter, force_output_path=pines_path)
 
             if (abs(measured_x_shift) > shift_tolerance) or (abs(measured_y_shift) > shift_tolerance):
                 print('Shift greater than {} pixels measured for {} in {}.'.format(
@@ -1121,7 +1121,7 @@ def pines_logging(filename, date, target_name, filter_name, exptime, airmass, x_
     return log_text
 
 
-def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., force_output_path=''):
+def shift_measurer(target, image_path, filter, num_sources=15, closeness_tolerance=1., force_output_path=''):
     """Measure shifts between an image and the master synthetic image for a target. 
 
     :param target: target's full 2MASS name 
@@ -1138,21 +1138,24 @@ def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., 
     :rtype: [type]
     """
 
-    def corr_shift_determination(corr):
+    def corr_shift_determination(corr, filter):
         # Measure shift between the check and master images by fitting a 2D gaussian to corr. This gives sub-pixel accuracy.
         # Find the pixel with highest correlation, then use this as estimate for gaussian fit.
         y_max, x_max = np.unravel_index(np.argmax(corr), corr.shape)
         y, x = np.mgrid[y_max-10:y_max+10, x_max-10:x_max+10]
         corr_cut = corr[y, x]
         gaussian_init = models.Gaussian2D(
-            np.max(corr_cut), x_max, y_max, 8/2.355, 8/2.355, 0)
+            np.max(corr_cut), x_max, y_max, 10/2.355, 10/2.355, 0)
         fit_gauss = fitting.LevMarLSQFitter()
         gaussian = fit_gauss(gaussian_init, x, y, corr_cut)
         fit_x = gaussian.x_mean.value
         fit_y = gaussian.y_mean.value
 
-        x_shift = fit_x - 1024
-        y_shift = fit_y - 1024
+        x_shift = fit_x - 925
+        if filter == 'Y' or filter == 'J':
+            y_shift = fit_y - 925
+        else:
+            y_shift = fit_y - 1000
         return(x_shift, y_shift)
 
     if force_output_path != '':
@@ -1163,7 +1166,7 @@ def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., 
     short_name = short_name_creator(target)
     synthetic_filename = target.replace(' ', '')+'_master_synthetic.fits'
     synthetic_path = pines_path / \
-        ('Calibrations/Master Synthetic Images/'+synthetic_filename)
+        ('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+synthetic_filename)
     
     #image_path = pines_path/('Objects/'+short_name+'/reduced/'+image_name)
 
@@ -1226,7 +1229,8 @@ def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., 
     date = image_path.name.split('.')[0]
     log = pines_log_reader(pines_path/('Logs/'+date+'_log.txt'))
     #raw_filename = image_name.split('_')[0]+'.fits'
-    raw_filename = image_path.name.split('_')[0]+'.fits'
+    #raw_filename = image_path.name.split('_')[0]+'.fits'
+    raw_filename = str(image_path)[40:].split('_')[0]+'.fits'
     ind = np.where(log['Filename'] == raw_filename)[0][0]
     seeing = float(log['X seeing'][ind])
 
@@ -1246,18 +1250,18 @@ def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., 
     bad_inds = []
     for i in range(len(sources)):
         if i not in bad_inds:
-            x = sources['xcenter'][i]
-            y = sources['ycenter'][i]
+            x = sources['x_center'][i]
+            y = sources['y_center'][i]
             dists = np.array(
-                np.sqrt((sources['xcenter']-x)**2 + (sources['ycenter']-y)**2))
+                np.sqrt((sources['x_center']-x)**2 + (sources['y_center']-y)**2))
             duplicate_inds = np.where(
                 (dists < closeness_tolerance) & (dists != 0))[0]
             if len(duplicate_inds) >= 1:
                 bad_inds.extend(duplicate_inds)
 
     ap_sum = np.array(sources['aperture_sum'])
-    source_x = np.array(sources['xcenter'])
-    source_y = np.array(sources['ycenter'])
+    source_x = np.array(sources['x_center'])
+    source_y = np.array(sources['y_center'])
 
     ap_sum = np.delete(ap_sum, bad_inds)
     source_x = np.delete(source_x, bad_inds)
@@ -1278,14 +1282,14 @@ def shift_measurer(target, image_path, num_sources=15, closeness_tolerance=10., 
     corr = signal.fftconvolve(master_synthetic_image,
                               check_synthetic_image[::-1, ::-1])
 
-    (x_shift, y_shift) = corr_shift_determination(corr)
+    (x_shift, y_shift) = corr_shift_determination(corr, filter)
     #print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
     # print('')
 
     return (x_shift, -y_shift, source_x, source_y, check_image)
 
 
-def synthetic_image_maker(x_centroids, y_centroids, fwhm=2.5):
+def synthetic_image_maker(x_centroids, y_centroids, filter, fwhm=2.5):
     """Construct a synthetic image from centroid data
 
     :param x_centroids: array of x positions
@@ -1296,7 +1300,10 @@ def synthetic_image_maker(x_centroids, y_centroids, fwhm=2.5):
     :type fwhm: float, optional
     """
     # Construct synthetic images from centroid/flux data.
-    synthetic_image = np.zeros((1024, 1024))
+    if filter=='Y' or filter=='J':
+        synthetic_image = np.zeros((925, 925))
+    elif filter=='H' or filter=='K':
+        synthetic_image = np.zeros((1000, 925))
     sigma = fwhm/2.355
     for i in range(len(x_centroids)):
         # Cut out little boxes around each source and add in Gaussian representations. This saves time.
