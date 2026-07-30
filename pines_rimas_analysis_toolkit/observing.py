@@ -445,7 +445,7 @@ def log_out_of_order_fixer(log_path, sftp):
     return
 
 
-def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path=''):
+def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path='', skip=''):
     """Updates x_shift and y_shift measurements from a PINES log. These shifts are measured using *full* resolution images, while at the telescope,
         we use *half* resolution images (to save time between exposures). By measuring on full-res images, we get more accurate shifts, which allows 
         us to determine centroids more easily.
@@ -520,6 +520,10 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             short_name = short_name_creator(target.replace(' ', ''))#.split(' J')[0]+target.split(' J')[1])
             image_path = pines_path / ('Objects/'+short_name+'_rimas/reduced/'+filter+'/'+filename)
 
+            if skip != '':
+                if filename[-11:-9] == skip:
+                    continue
+            
             # Figure out which file you're looking at and its position in the log.
             log_ind = np.where(log['Filename'] == filename.split('_')[0]+'.fits')[0][0]
 
@@ -1284,8 +1288,8 @@ def shift_measurer(target, image_path, filter, date, num_sources=15, closeness_t
                               check_synthetic_image[::-1, ::-1])
 
     (x_shift, y_shift) = corr_shift_determination(corr, filter)
-    print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
-    print('')
+    #print('(X shift, Y shift): ({:3.1f}, {:3.1f})'.format(x_shift, -y_shift))
+    #print('')
 
     return (float(x_shift), float(-y_shift), source_x, source_y, check_image)
 
