@@ -634,8 +634,8 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         daofind = DAOStarFinder(
             fwhm=fwhm, threshold=sigma_above_bg*stddev, ratio=0.8, xycoords=star_pos)
         new_sources = daofind(image)
-        x_centroids = new_sources['xcentroid']
-        y_centroids = new_sources['ycentroid']
+        x_centroids = new_sources['x_centroid']
+        y_centroids = new_sources['y_centroid']
         sharpness = new_sources['sharpness']
         fluxes = new_sources['flux']
         peaks = new_sources['peak']
@@ -653,7 +653,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         sharpness = sharpness[use_y]
         fluxes = fluxes[use_y]
         peaks = peaks[use_y]
-
+        '''
         # Also cut using sharpness, this seems to eliminate a lot of false detections.
         use_sharp = np.where(sharpness > 0.5)[0]
         x_centroids = x_centroids[use_sharp]
@@ -661,7 +661,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         sharpness = sharpness[use_sharp]
         fluxes = fluxes[use_sharp]
         peaks = peaks[use_sharp]
-
+        '''
         if exclude_lower_left:
             # Cut sources in the lower left, if bars are present.
             use_ll = np.where((x_centroids > 512) | (y_centroids > 512))
@@ -679,7 +679,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         sharpness = sharpness[use_512]
         fluxes = fluxes[use_512]
         peaks = peaks[use_512]
-        '''
+        
         # Cut sources with negative/saturated peaks
         use_peaks = np.where((peaks > 30) & (peaks < 50000))[0]
         x_centroids = x_centroids[use_peaks]
@@ -687,7 +687,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         sharpness = sharpness[use_peaks]
         fluxes = fluxes[use_peaks]
         peaks = peaks[use_peaks]
-
+        '''
         # Do quick photometry on the remaining sources.
         positions = [(x_centroids[i], y_centroids[i])
                      for i in range(len(x_centroids))]
@@ -700,8 +700,8 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         bad_source_locs = np.where(phot_table['aperture_sum'] < cutoff)
         phot_table.remove_rows(bad_source_locs)
 
-        x_centroids = phot_table['xcenter'].value
-        y_centroids = phot_table['ycenter'].value
+        x_centroids = phot_table['x_center'].value
+        y_centroids = phot_table['y_center'].value
 
         return(x_centroids, y_centroids)
 
@@ -795,7 +795,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
 
     # Create the synthetic image using the accepted sources.
     synthetic_image = synthetic_image_maker(
-        x_centroids[ids_to_keep], y_centroids[ids_to_keep], 8)
+        x_centroids[ids_to_keep], y_centroids[ids_to_keep], 8, filter)
     plt.figure(figsize=(9, 7))
     plt.imshow(synthetic_image, origin='lower')
     plt.title('Synthetic image')
