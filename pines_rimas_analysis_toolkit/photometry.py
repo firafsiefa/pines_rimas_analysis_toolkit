@@ -2424,7 +2424,7 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
                   ('Objects/'+short_name+'/sources/'+sources['Name'][i]+'/')))
         pbar = ProgressBar()
         for j in pbar(range(len(reduced_files))):
-            centroid_df[sources['Name'][i]+' Centroid Warning'][j] = 0
+            centroid_df.loc[j, sources['Name'][i]+' Centroid Warning'] = 0
             file = reduced_files[j]
             image = fits.open(file)[0].data
             header = fits.open(file)[0].header
@@ -2438,10 +2438,10 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
 
             # Save the filename for readability. Save the seeing for use in variable aperture photometry. Save the time for diagnostic plots.
             if i == 0:
-                centroid_df['Filename'][j] = file.name.split('_')[0]+'.fits'
-                centroid_df['Seeing'][j] = log['X seeing'][log_ind]
-                centroid_df['Airmass'][j] = log['Airmass'][log_ind]
-                centroid_df['Filter'][j] = log['Filt.'][log_ind]
+                centroid_df.loc[j, 'Filename'] = file.name.split('_')[0]+'.fits'
+                centroid_df.loc[j, 'Seeing'] = log['X seeing'][log_ind]
+                centroid_df.loc[j, 'Airmass'] = log['Airmass'][log_ind]
+                centroid_df.loc[j, 'Filter'] = log['Filt.'][log_ind]
 
             # Flag indicating if you should not trust the log's shifts. Set to true if x_shift/y_shift are 'nan' or > 30 pixels.
             nan_flag = False
