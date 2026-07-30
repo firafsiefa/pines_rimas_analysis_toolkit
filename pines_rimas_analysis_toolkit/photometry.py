@@ -2388,8 +2388,8 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
             time_fmt = '%Y-%m-%dT%H:%M:%S.%f'
 
         jd = julian.to_jd(datetime.datetime.strptime(time_str, time_fmt))
-        centroid_df['Time JD UTC'][j] = jd
-        centroid_df['Time BJD TDB'][j] = jd_utc_to_bjd_tdb(
+        centroid_df.loc[j, 'Time JD UTC'] = jd
+        centroid_df.loc[j, 'Time BJD TDB'] = jd_utc_to_bjd_tdb(
             jd, header['RA'], header['DEC'])
 
     # From times, generate night and block numbers.
