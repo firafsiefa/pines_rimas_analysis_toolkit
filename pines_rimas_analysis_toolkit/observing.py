@@ -567,8 +567,8 @@ def log_updater(date, sftp, shift_tolerance=30., upload=False, force_output_path
             print('')
 
             # Overwrite the telescope's logged shifts and seeing values with the new measurements.
-            log.loc[log_ind, 'X shift'] = str(np.round(measured_x_shift, 1))
-            log.loc[log_ind, 'Y shift'] = str(np.round(measured_y_shift, 1))
+            log.loc[log_ind, 'X shift'] = str(np.round(float(measured_x_shift), 1))
+            log.loc[log_ind, 'Y shift'] = str(np.round(float(measured_y_shift), 1))
             log.loc[log_ind, 'X seeing'] = str(np.round(x_seeing, 1))
             log.loc[log_ind, 'Y seeing'] = str(np.round(y_seeing, 1))
 
@@ -712,7 +712,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         else:
             synthetic_image = np.zeros((1000, 925))
         
-        sigma = fwhm#/2.355
+        sigma = fwhm/2.355
         for i in range(len(x_centroids)):
             # Cut out little boxes around each source and add in Gaussian representations. This saves time.
             int_centroid_x = int(np.round(x_centroids[i]))
