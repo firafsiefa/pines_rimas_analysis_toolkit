@@ -632,7 +632,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         avg, med, stddev = sigma_clipped_stats(
             image, sigma=3.0, maxiters=3)  # Previously maxiters = 5!
         daofind = DAOStarFinder(
-            fwhm=fwhm, threshold=sigma_above_bg*stddev, sky=med, ratio=0.8, xycoords=star_pos)
+            fwhm=fwhm, threshold=sigma_above_bg*stddev, ratio=0.8, xycoords=star_pos)
         new_sources = daofind(image)
         x_centroids = new_sources['xcentroid']
         y_centroids = new_sources['ycentroid']
@@ -801,7 +801,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
     plt.title('Synthetic image')
     plt.show()
     plt.savefig('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_final.png')
-    
+
     pdb.set_trace()
     print('')
     print('')
