@@ -767,6 +767,7 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
         'Inspect to make sure stars were found!\nO for magnification tool, R to reset view')
     plt.tight_layout()
     plt.show()
+    plt.savefig('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_preview.png')
 
     print('')
     print('')
@@ -799,7 +800,8 @@ def master_synthetic_image_creator(target, date, star_pos, filter, image_name, p
     plt.imshow(synthetic_image, origin='lower')
     plt.title('Synthetic image')
     plt.show()
-
+    plt.savefig('Calibrations/Master Synthetic Images/'+date+'/'+filter+'/'+target+'_final.png')
+    
     pdb.set_trace()
     print('')
     print('')
