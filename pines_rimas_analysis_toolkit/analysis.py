@@ -1821,11 +1821,17 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
         df = pd.read_csv(phot_file)
         df.columns = df.keys().str.strip()
 
+        no_ref = []
+        for i in range(len(ref_names)):
+            r = ref_names[i]
+            if r+' Flux' not in list(df.columns):
+                no_ref.append(i)
+                
         ref_names = np.delete(ref_names, no_ref)
         num_refs = len(ref_names)
         ref_source_x = np.delete(ref_source_x, no_ref)
         ref_source_y = np.delete(ref_source_y, no_ref)
-        
+
         #Restrict arrays to filter_inds
         full_times = np.array(df['Time BJD TDB'])
         full_file_list = np.array(df['Filename'])
