@@ -509,8 +509,8 @@ def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(
             ax.set_ylabel('Normalized Flux', fontsize=20)
         ax.set_xlabel('Time (BJD$_{TDB}$)', fontsize=20)
 
-        ax.set_xlim(np.mean(times_plot)-standard_time_range/2,
-                    np.mean(times_plot)+standard_time_range/2)
+        #ax.set_xlim(np.mean(times_plot)-standard_time_range/2,
+         #           np.mean(times_plot)+standard_time_range/2)
 
         if force_y_lim[0] != 0.0 and force_y_lim[1] != 0.0:
             ax.set_ylim(ylim[0], ylim[1])
