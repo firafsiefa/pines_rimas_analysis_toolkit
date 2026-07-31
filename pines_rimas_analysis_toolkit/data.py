@@ -1807,7 +1807,10 @@ def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', m
     if filter == '':
         raw_sub_dirs = [Path(i) for i in glob.glob(str(raw_path)+'/*')]
     else:
-        raw_sub_dirs = [raw_path/filter]
+        if remove_bg==True:
+            raw_sub_dirs = [raw_path/filter+'_nobg']
+        else:
+            raw_sub_dirs = [raw_path/filter]
     
     for raw_sub_dir in raw_sub_dirs:
         reduced_path = reduced_top_level_path/raw_sub_dir.name
@@ -1882,7 +1885,15 @@ def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', m
 
                 # Set bad pixels to NaNs.
                 frame_red[np.where(bad_pixel_mask == 1)] = np.nan
+                
+            if remove_bg==True:
+                kernel = Gaussian2DKernel(x_stddev=0.5)
+                image = interpolate_replace_nans(frame_red, kernel)
 
+                bg_2d = Background2D(image, box_size=64)#, bkg_estimator=MedianBackground())
+                check_image = image - bg_2d.background
+
+                frame_red = check_image
             # #Do a background model subtraction
             # frame_red = bg_2d(frame_red)
 
