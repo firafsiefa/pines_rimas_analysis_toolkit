@@ -3388,6 +3388,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
                 if j == 0:
                     f.write('{:<21s}, '.format('Filename'))
                     f.write('{:<15s}, '.format('Time BJD TDB'))
+                    f.write('{:<15s}, '.format('Block Number'))
                     f.write('{:<15s}, '.format('Sigma Clip Flag'))
                     f.write('{:<31s}, {:<31s}, {:<30s}, {:<30s}, {:<9s}, {:<15s}, '.format(short_name+' Normalized Flux', short_name +
                             ' Normalized Flux Error', short_name+' Corrected Flux', short_name+' Corrected Flux Error', 'ALC Flux', 'ALC Flux Error'))
@@ -3404,6 +3405,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
                 # Write in the data lines.
                 f.write('{:<21s}, '.format(output_df['Filename'][j]))
                 f.write('{:<15.7f}, '.format(output_df['Time BJD TDB'][j]))
+                f.write('{:<15.7f}, '.format(output_df['Block Number'][j]))
                 f.write('{:<15d}, '.format(output_df['Sigma Clip Flag'][j]))
                 f.write('{:<31.6f}, {:<31.6f}, {:<30.6f}, {:<36.6f}, {:<9.6f}, {:<15.6f}, '.format(output_df[short_name+' Normalized Flux'][j], output_df[short_name+' Normalized Flux Error'][
                         j], output_df[short_name+' Corrected Flux'][j], output_df[short_name+' Corrected Flux Error'][j], output_df['ALC Flux'][j], output_df['ALC Flux Error'][j]))
