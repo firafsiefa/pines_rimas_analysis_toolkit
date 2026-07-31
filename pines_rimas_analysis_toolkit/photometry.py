@@ -2834,9 +2834,9 @@ def manual_ref_star_chooser(short_name, profile_data, positions=[], restore=Fals
         return
 
     target = sources.iloc[[target_id]].reset_index(
-        drop=True).drop(columns=['id'])
+        drop=True)#.drop(columns=['id'])
     suitable_refs = sources.drop(bad_ref_ids).reset_index(
-        drop=True).drop(columns=['id'])
+        drop=True)#.drop(columns=['id'])
 
 
     output_dict = {'Name':[], 'Source Detect X':[], 'Source Detect Y':[]}
