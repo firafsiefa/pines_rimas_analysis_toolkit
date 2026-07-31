@@ -16,6 +16,8 @@ from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creat
 from pines_rimas_analysis_toolkit.pwv import pwv_spectrum_time_series
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
+from astropy.timeseries import LombScargle
+
 import batman
 from scipy.stats import pearsonr, sigmaclip
 from scipy.interpolate import CubicSpline
