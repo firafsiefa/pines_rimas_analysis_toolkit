@@ -398,7 +398,7 @@ def calc_aperture_mmm(data, mask, sigma_clip):
         return (mean, median, mode, std, actual_area)
 
 
-def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.8, qe=0.9, force_output_path=''):
+def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.8, qe=0.9, force_output_path='', interpolate_nans=False):
     '''Authors:
                 Patrick Tamburo, Boston University, June 2020
         Purpose:
@@ -457,6 +457,9 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.
         hdu = fits.open(reduced_files[j])[0]
         data = hdu.data
         header = hdu.header
+
+        if interpolate_nans==True:
+            data = interpolate_replace_nans(data, kernel=Gaussian2DKernel(x_stddev=0.5))
 
         # Get the source positions in this image.
         positions = []

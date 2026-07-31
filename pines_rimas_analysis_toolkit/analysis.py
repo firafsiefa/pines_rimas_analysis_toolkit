@@ -1630,9 +1630,9 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
     if (phot_type != 'aper') and (phot_type != 'psf'):
         raise ValueError("phot_type must be either 'aper' or 'psf'!")
 
-    def optimal_aperture_output():
+   def optimal_aperture_output():
         '''
-            PURPOSE: writes the aperture type that minimizes the eference star scatter metric to a file 'optimal_aperture.txt' in the object's analysis directory.
+        PURPOSE: writes the aperture type that minimizes the reference star scatter metric to a file 'optimal_aperture.txt' in the object's analysis directory.
         '''
         best_ap_output_path = analysis_path/('optimal_aperture.txt')
         if not os.path.exists(best_ap_output_path):
@@ -1665,10 +1665,10 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
 
     def optimizing_metric_calculator(all_nights_corr_targ_flux, all_nights_block_inds):
         
-        if not np.shape(all_nights_corr_targ_flux)[0] == np.shape(all_nights_block_inds)[0]:
+        if not len(all_nights_corr_targ_flux) == len(all_nights_block_inds):
             raise RuntimeError("Shape of all_nights_corr_ref_flux != shape of all_nights_block_inds.")
         
-        n_nights = np.shape(all_nights_block_inds)[0]
+        n_nights = len(all_nights_block_inds)
         all_night_stds = []
         for i in range(n_nights):
             n_blocks = len(all_nights_block_inds[i])
@@ -1703,7 +1703,7 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
                     output_filename = analysis_path/(ap_rad+'/'+short_name.replace(' ', '')+'_variable_aper_phot_f='+factor+'_global_weighted_lc_.csv')
         else:
             raise RuntimeError('Need to implement PSF photometry!')
-    
+
         return output_filename
 
     np.seterr(divide='ignore')  # Ignore divide-by-zero errors.
@@ -1774,7 +1774,8 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
 
     # Get centroids for regression.
     centroid_path = pines_path / ('Objects/'+short_name+'/sources/'+filter+'/target_and_references_centroids.csv')
-    centroid_df = pines_log_reader(centroid_path)
+    centroid_df1 = pines_log_reader(centroid_path)
+    centroid_df = centroid_df1[~np.isnan(pd.to_numeric(centroid_df1[short_name+' Image X'], errors='coerce'))].reset_index(drop=True)
     full_centroid_x = np.array(centroid_df[source_names[0]+' Image X'], dtype='float')
     full_centroid_y = np.array(centroid_df[source_names[0]+' Image Y'], dtype='float')
     
