@@ -4,7 +4,7 @@ from pines_rimas_analysis_toolkit.utils import pines_dir_check, pines_log_reader
 from astropy.stats import SigmaClip
 from astropy.io import fits
 from astropy.stats import histogram, sigma_clipped_stats
-
+from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
 from scipy.stats import sigmaclip
 
 from photutils.background import Background2D, MedianBackground
@@ -1814,7 +1814,7 @@ def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', m
             reduced_path = reduced_top_level_path/(raw_sub_dir.name+'_nobg')
         else:
             reduced_path = reduced_top_level_path/raw_sub_dir.name
-            
+
         if not os.path.exists(reduced_path):
             os.mkdir(reduced_path)
 
