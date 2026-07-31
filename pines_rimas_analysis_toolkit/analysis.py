@@ -2738,7 +2738,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
     reduced_files = np.array([reduced_path/i for i in reduced_filenames])
 
     # Get source names for this observation.
-    source_detection_file = pines_path / ('Objects/'+short_name+'/sources/target_and_references_source_detection.csv')
+    source_detection_file = pines_path / ('Objects/'+short_name+'/sources/'+filter+'/target_and_references_source_detection.csv')
     source_df = pd.read_csv(source_detection_file)
 
     #Get source positions
