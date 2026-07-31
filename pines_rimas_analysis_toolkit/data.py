@@ -1763,7 +1763,7 @@ def master_flat_chooser(flats_path, filter, header):
                             min(np.array(flat_date_distances)))[0][0]
         master_flat = fits.open(possible_flats[flat_ind])[0].data
         master_flat_name = possible_flats[flat_ind].name
-        return master_flat, master_flat_name
+    return master_flat, master_flat_name
 
 
 def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', manual_dark_path='', manual_bpm_path='', linearity_correction=False, force_output_path='', remove_bg=False):
