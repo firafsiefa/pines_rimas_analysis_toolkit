@@ -674,7 +674,8 @@ def block_binner_FF(raw_times, raw_flux, raw_blocks):
     :rtype: numpy arrays
     """
 
-    block_inds = [list(j) for i,  in it.groupby(raw_blocks)]
+    values, indices, counts = np.unique(raw_blocks, return_counts=True, return_index=True)
+    block_inds = np.split(block_inds, indices)[1:]
 
     n_blocks = len(block_inds)
     bin_times = np.zeros(n_blocks)
