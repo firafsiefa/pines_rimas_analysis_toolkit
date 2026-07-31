@@ -1807,13 +1807,14 @@ def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', m
     if filter == '':
         raw_sub_dirs = [Path(i) for i in glob.glob(str(raw_path)+'/*')]
     else:
-        if remove_bg==True:
-            raw_sub_dirs = [raw_path/(str(filter)+'_nobg')]
-        else:
-            raw_sub_dirs = [raw_path/filter]
+        raw_sub_dirs = [raw_path/filter]
     
     for raw_sub_dir in raw_sub_dirs:
-        reduced_path = reduced_top_level_path/raw_sub_dir.name
+        if remove_bg==True:
+            reduced_path = reduced_top_level_path/(raw_sub_dir.name+'_nobg')
+        else:
+            reduced_path = reduced_top_level_path/raw_sub_dir.name
+            
         if not os.path.exists(reduced_path):
             os.mkdir(reduced_path)
 
