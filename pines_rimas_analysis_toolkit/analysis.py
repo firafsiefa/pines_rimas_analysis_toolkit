@@ -2831,7 +2831,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
         else:
             ap_rad == ''
 
-        df = pd.read_csv(phot_file)
+        df = pd.read_csv(phot_file)[~np.isnan(pd.to_numeric(centroid_df1[short_name+' Image X'], errors='coerce'))].reset_index(drop=True)
         df.columns = df.keys().str.strip()
 
         no_ref = []
