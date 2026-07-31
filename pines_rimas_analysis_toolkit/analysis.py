@@ -1630,7 +1630,7 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
     if (phot_type != 'aper') and (phot_type != 'psf'):
         raise ValueError("phot_type must be either 'aper' or 'psf'!")
 
-   def optimal_aperture_output():
+    def optimal_aperture_output():
         '''
         PURPOSE: writes the aperture type that minimizes the reference star scatter metric to a file 'optimal_aperture.txt' in the object's analysis directory.
         '''
