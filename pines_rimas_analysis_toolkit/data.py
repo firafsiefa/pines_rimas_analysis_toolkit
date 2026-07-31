@@ -1808,7 +1808,7 @@ def reduce(short_name, band, filter='', delete_raw=False, manual_flat_path='', m
         raw_sub_dirs = [Path(i) for i in glob.glob(str(raw_path)+'/*')]
     else:
         if remove_bg==True:
-            raw_sub_dirs = [raw_path/filter+'_nobg']
+            raw_sub_dirs = [raw_path/(str(filter)+'_nobg')]
         else:
             raw_sub_dirs = [raw_path/filter]
     
