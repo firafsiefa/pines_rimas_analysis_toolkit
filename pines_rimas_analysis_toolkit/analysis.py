@@ -3369,7 +3369,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
                     np.zeros(len(night_inds[j]))+norm_night_weights[j][k])
 
         # Create the output dictionary
-        output_dict = {'Filename': file_list_save, 'Time BJD TDB': time_save, 'Block Number': all_nights_block_inds, 'Sigma Clip Flag': sigma_clip_flag_save, short_name+' Normalized Flux': targ_flux_norm_save, short_name +
+        output_dict = {'Filename': file_list_save, 'Time BJD TDB': time_save, 'Block Number': blocks_save, 'Sigma Clip Flag': sigma_clip_flag_save, short_name+' Normalized Flux': targ_flux_norm_save, short_name +
                        ' Normalized Flux Error': targ_err_norm_save, short_name+' Corrected Flux': targ_flux_corr_save, short_name+' Corrected Flux Error': targ_flux_corr_err_save, 'ALC Flux': alc_flux_save, 'ALC Flux Error': alc_err_save}
         for j in range(num_refs):
             ref = ref_names[j]
