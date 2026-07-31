@@ -2,7 +2,7 @@ import pines_rimas_analysis_toolkit as pat
 from pines_rimas_analysis_toolkit.analysis import raw_flux_plot
 from pines_rimas_analysis_toolkit.utils import pines_dir_check, short_name_creator, pines_log_reader, quick_plot as qp, jd_utc_to_bjd_tdb, get_source_names, jd_utc_to_bjd_tdb
 from pines_rimas_analysis_toolkit.data import master_dark_stddev_chooser, bpm_chooser, bg_2d
-from pines_rimas_analysis_toolkit.analysis import night_splitter, block_splitter
+from pines_rimas_analysis_toolkit.analysis import night_splitter, block_splitter, block_splitter_FF
 from pines_rimas_analysis_toolkit.observing import seeing_measurer
 
 from astropy.io import fits
@@ -2413,7 +2413,10 @@ def centroider_FF(short_name, sources, filter='', output_plots=False, restore=Fa
     # On each night...
     for k in range(len(night_inds)):
         # Generate block indices...
-        block_inds = block_splitter(centroid_df['Time BJD TDB'][night_inds[k]], bin_mins=bin_mins, time_threshold=time_threshold)
+        #block_inds = block_splitter(centroid_df['Time BJD TDB'][night_inds[k]], bin_mins=bin_mins, time_threshold=time_threshold)
+        red_files = reduced_files[night_inds[k]]
+        block_inds = block_splitter_FF(red_files)
+        
         # Convert them to block numbers...
         night_block_numbers = [
             np.zeros(10, dtype='int')+i+1 for i in range(len(block_inds))]

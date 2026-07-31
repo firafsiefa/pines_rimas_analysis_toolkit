@@ -736,6 +736,20 @@ def block_splitter(times, time_threshold=0.05, bin_mins=0.0):
 
     return block_inds
 
+def block_splitter_FF(reduced_files):
+
+    block_inds = []
+    for i in range(len(reduced_files)-9):
+        diff = float(str(reduced_files[i+9])[-16:-12]) - float(str(reduced_files[i])[-16:-12])
+    
+        if diff == 9:
+            inds = np.arange(i, i+10)
+            block_inds.append(list(inds))
+    
+        else:
+            continue
+
+    return block_inds
 
 def plot_style():
     """Sets some font sizes for standard plots. 
