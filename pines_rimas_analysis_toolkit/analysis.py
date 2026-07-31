@@ -363,7 +363,7 @@ def alc_plot(weighted_lc_path, mode='night', force_output_path='', bin_mins=0):
     plt.savefig(output_path, dpi=300)
 
 
-def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(0.,0.), transit_dict={}, sigma_clipping=False, force_output_path='', time_threshold=0.10):
+def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(0.,0.), transit_dict={}, sigma_clipping=False, force_output_path='', fit_period=False, time_threshold=0.10):
     """Creates a plot of the target light curve using output from weighted_lightcurve.
 
     :param weighted_lc_path: path to weighted light curve csv
@@ -427,10 +427,11 @@ def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(
         params.u = transit_dict['u']                
         params.limb_dark = "quadratic"
 
+    P_all = []
 
     # Plot the corrected target flux.
     fig, axis = plt.subplots(nrows=1, ncols=num_nights,
-                             figsize=(17, 5), sharey=True)
+                             figsize=(20, 5), sharey=True)
     #plt.subplots_adjust(left=0.07, wspace=0.05, top=0.86, bottom=0.17, right=0.96)
     plt.subplots_adjust(left=0.07, wspace=0.05, top=0.92, bottom=0.17)
 
@@ -463,13 +464,32 @@ def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(
             corr_targ_flux_plot = corr_targ_flux_plot[clip_inds]
             
         binned_times, binned_flux, binned_errs = block_binner(times_plot, corr_targ_flux_plot, time_threshold=time_threshold, bin_mins=bin_mins)
-
+        
         ax.grid(alpha=0.2)
         # Plot the corrected target and corrected binned target flux.
         ax.plot(times_plot, corr_targ_flux_plot, linestyle='',
                 marker='o', zorder=1, color='darkgrey', ms=5)
         ax.errorbar(binned_times, binned_flux, binned_errs, linestyle='',
                     marker='o', zorder=2, color='k', capsize=2, ms=7)
+
+        if fit_period==True:
+            freq, power = LombScargle(binned_times, binned_flux).autopower()
+            best_frequency = freq[np.argmax(power)]
+            t_fit = np.linspace(min(times_plot), max(times_plot))
+            ls = LombScargle(binned_times, binned_flux)
+            y_fit = ls.model(t_fit, best_frequency)
+            
+            ax.plot(t_fit, y_fit)
+
+            t = Time(binned_times,format='jd', scale='tdb')
+            t0 = float(t[0].isot[11:13]) + (float(t[0].isot[14:16])/60)
+            t1 = Time(t[0].value + (1/best_frequency), format='jd')
+            t1 = float(t1.isot[11:13]) + (float(t1.isot[14:16])/60)
+            T = t1-t0
+            P_all.append(T)
+
+            anchored_text = AnchoredText('P = '+str(round(T,2))+' hr', loc=2)
+            ax.add_artist(anchored_text)
 
         if len(transit_dict.keys()) != 0:
             ax.plot(model_t, model_flux, lw=3)
@@ -493,14 +513,20 @@ def corr_target_plot(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(
         else:
             ax.set_ylim(1-standard_y, 1+standard_y)
         
+        
         #if mode == 'night':
             #ax.text(np.mean(times_plot), ax.get_ylim()[
                     #1], ut_date_str, fontsize=18, ha='center', va='top')
 
-    plt.suptitle(sources[0], fontsize=20)
-
+    
+    if fit_period==True:
+        P_avg = np.mean(P_all)
+        plt.suptitle(sources[0]+', $P_{avg} = $'+str(round(P_avg, 2))+' hr', fontsize=20)
+        output_path = weighted_lc_path.parent/(mode+'_Best_Period_fit.png')
+    else:
+        plt.suptitle(sources[0], fontsize=20)
+        output_path = weighted_lc_path.parent/(mode+'_weighted_lc.png')
     # Save the figure.
-    output_path = weighted_lc_path.parent/(mode+'_weighted_lc.png')
     print('Saving {} normalized flux plot to {}.'.format(mode, output_path))
     plt.savefig(output_path, dpi=300)
 
@@ -1826,7 +1852,7 @@ def weighted_lightcurve(short_name, filter='J', phot_type='aper', convergence_th
             r = ref_names[i]
             if r+' Flux' not in list(df.columns):
                 no_ref.append(i)
-                
+
         ref_names = np.delete(ref_names, no_ref)
         num_refs = len(ref_names)
         ref_source_x = np.delete(ref_source_x, no_ref)
