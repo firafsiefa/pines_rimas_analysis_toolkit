@@ -674,8 +674,9 @@ def block_binner_FF(raw_times, raw_flux, raw_blocks):
     :rtype: numpy arrays
     """
 
+    block_plain = np.arange(0, len(raw_blocks))
     values, indices, counts = np.unique(raw_blocks, return_counts=True, return_index=True)
-    block_inds = np.split(raw_blocks, indices)[1:]
+    block_inds = np.split(block_plain, indices)[1:]
 
     n_blocks = len(block_inds)
     bin_times = np.zeros(n_blocks)
@@ -3527,7 +3528,7 @@ def corr_target_plot_FF(weighted_lc_path, mode='night', bin_mins=0.0, force_y_li
             clip_inds = np.where((corr_targ_flux_plot > l) & (corr_targ_flux_plot < h))[0]
             times_plot = times_plot[clip_inds]
             corr_targ_flux_plot = corr_targ_flux_plot[clip_inds]
-            block_plot = block_plot[inds]
+            block_plot = block_plot[clip_inds]
 
         binned_times, binned_flux, binned_errs = block_binner_FF(times_plot, corr_targ_flux_plot, block_plot)#time_threshold=time_threshold, bin_mins=bin_mins)
         
