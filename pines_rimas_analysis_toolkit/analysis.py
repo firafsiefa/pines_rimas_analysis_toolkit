@@ -2943,6 +2943,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
         file_list_save = []
         time_save = []
         sigma_clip_flag_save = []
+        blocks_save = []
 
         # Loop over each night in the dataset.
         for j in range(num_nights):
@@ -2986,6 +2987,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
             file_list_save.extend(full_file_list[inds[nan_inds]])
             time_save.extend(full_times[inds[nan_inds]])
             sigma_clip_flag_save.extend(sigma_clip_flags[inds[nan_inds]])
+            blocks_save.extend(block_inds)
 
             targ_flux = np.array(df[source_names[0]+' Flux'][inds[nan_inds]], dtype='float')
             targ_flux_err = np.array(df[source_names[0]+' Flux Error'][inds[nan_inds]], dtype='float')
@@ -3037,7 +3039,10 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
             norm_err = np.zeros((num_frames, num_refs))
 
             # Get indices of each block for binning/plotting purposes.
-            block_inds = [list(j) for i,  in it.groupby(block_inds)]#block_splitter(times, bin_mins=bin_mins, time_threshold=time_threshold)
+            #block_splitter(times, bin_mins=bin_mins, time_threshold=time_threshold)
+            
+            values, indices, counts = np.unique(block_inds, return_counts=True, return_index=True)
+            block_inds = np.split(block_inds, indices)[1:]
             all_nights_block_inds.append(block_inds)
 
             files = np.array(full_file_list[inds])
