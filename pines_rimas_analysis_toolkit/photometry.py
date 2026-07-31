@@ -425,12 +425,14 @@ def fixed_aper_phot(short_name, ap_radii, filter, an_in=12., an_out=30., gain=1.
         pines_path = pines_dir_check()
 
     centroid_path = pines_path/('Objects/'+short_name+'/sources/'+filter+'/target_and_references_centroids.csv')
-    centroided_sources = pines_log_reader(centroid_path)
+    centroided_sources1 = pines_log_reader(centroid_path)
+    centroided_sources = centroided_sources1[~np.isnan(pd.to_numeric(centroided_sources1[' '+target+' Image X'], errors='coerce'))].reset_index(drop=True)
 
     # Get list of reduced files for target.
     reduced_path = pines_path/('Objects/'+short_name+'/reduced/'+filter)
     reduced_filenames = natsorted([x.name for x in reduced_path.glob('*red.fits')])
-    reduced_files = np.array([reduced_path/i for i in reduced_filenames])
+    reduced_files1 = np.array([reduced_path/i for i in reduced_filenames])
+    reduced_files = reduced_files1[~np.isnan(pd.to_numeric(centroided_sources1[' '+target+' Image X'], errors='coerce'))]
 
     source_names = get_source_names(centroided_sources)
 
