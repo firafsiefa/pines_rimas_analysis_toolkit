@@ -659,6 +659,36 @@ def block_binner(raw_times, raw_flux, time_threshold=0.1, bin_mins=0.0):
         bin_flux_err[i] = np.nanstd(raw_flux[inds])/np.sqrt(len(inds[~np.isnan(raw_flux[inds])]))
     return bin_times, bin_flux, bin_flux_err
 
+def block_binner_FF(raw_times, raw_flux, raw_blocks):
+    """Bins PINES data over blocks.
+
+    :param raw_times: array of times
+    :type raw_times: numpy array
+    :param raw_flux: array of fluxes
+    :type raw_flux: numpy array
+    :param time_threshold: the gap between observations, in hours, above which sets of observations will be considered different blocks, defaults to 0.15
+    :type time_threshold: float, optional
+    :param bin_mins: minutes over which to bin data for staring observations, defaults to 0.0
+    :type bin_mins: float, optional
+    :return: arrays of binned times, flux, and errors
+    :rtype: numpy arrays
+    """
+
+    block_inds = [list(j) for i,  in it.groupby(raw_blocks)]
+
+    n_blocks = len(block_inds)
+    bin_times = np.zeros(n_blocks)
+    bin_flux = np.zeros(n_blocks)
+    bin_flux_err = np.zeros(n_blocks)
+    
+    #Get the binned time, flux, and flux error for each block ONLY at locations that are not NaNs!
+    for i in range(n_blocks):
+        inds = np.array(block_inds[i])
+        bin_times[i] = np.nanmean(raw_times[inds][~np.isnan(raw_flux[inds])])
+        bin_flux[i] = np.nanmean(raw_flux[inds][~np.isnan(raw_flux[inds])])
+        bin_flux_err[i] = np.nanstd(raw_flux[inds])/np.sqrt(len(inds[~np.isnan(raw_flux[inds])]))
+    return bin_times, bin_flux, bin_flux_err
+
 
 def block_splitter(times, time_threshold=0.05, bin_mins=0.0):
     """Finds individual blocks of data given a single night of exposture times. 
@@ -3370,3 +3400,178 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
     print('\nBest aperture: {}.\n'.format(best_ap))
     time.sleep(2)
     return
+
+
+def corr_target_plot_FF(weighted_lc_path, mode='night', bin_mins=0.0, force_y_lim=(0.,0.), transit_dict={}, sigma_clipping=False, force_output_path='', fit_period=False, time_threshold=0.10):
+    """Creates a plot of the target light curve using output from weighted_lightcurve.
+
+    :param weighted_lc_path: path to weighted light curve csv
+    :type weighted_lc_path: pathlib.PosixPath
+    :param mode: whether to run in 'night' or 'global' normalization mode, defaults to 'night'
+    :type mode: str, optional
+    :param bin_mins: number of minutes to bin over, defaults to 0.0
+    :type bin_mins: float, optional
+    :param force_y_lim: tuple specifying the y range to use in the form of (lower, upper), if you don't want to use standard_y_range, defaults to (0.,0.)
+    :type force_y_lim: tupe of floats, optional
+    :param transit_dict: dictionary containing batman planet parameters if you want to overplot a transit, defaults to an empty dict
+    :type transit_dict: dict, optional
+    :param sigma_clipping: whether or not to apply sigma clipping to the corrected target flux, defaults to False
+    :type sigma_clipping: bool, optional
+    """
+    if force_output_path != '':
+        pines_path = force_output_path
+    else:
+        pines_path = pines_dir_check()
+
+    weighted_lc_df = pines_log_reader(weighted_lc_path)
+    sources = get_source_names(weighted_lc_df)
+
+    times = np.array(weighted_lc_df['Time BJD TDB'])
+    block_inds = np.array(weighted_lc_df['Block Number'], dtype='int')
+    
+    if mode == 'night':
+        night_inds = night_splitter(times)
+    # Or treat all observations as a single "night".
+    elif mode == 'global':
+        night_inds = [list(np.arange(len(times)))]
+    num_nights = len(night_inds)
+
+    corr_targ_flux = np.array(weighted_lc_df[sources[0]+' Corrected Flux'], dtype='float')
+    broken_times = []
+    broken_flux = []
+    for i in range(num_nights):
+        broken_times.append(np.array(times[night_inds[i]]))
+        broken_flux.append(np.array(corr_targ_flux[night_inds[i]]))
+    standard_time_range = standard_x_range(broken_times)
+
+    if force_y_lim[0] != 0.0 and force_y_lim[1] != 0.0:
+        ylim = force_y_lim
+    else:
+        standard_y = standard_y_range(broken_flux, multiple=3.0)
+
+    #Generate a transit model if one has been given.
+    if len(transit_dict.keys()) > 0:
+        if len(transit_dict.keys()) != 9:
+            print('ERROR: You should pass 9 input arguments with the same names as the Batman tutorial in transit_dict.')
+            print('See: https://lweb.cfa.harvard.edu/~lkreidberg/batman/quickstart.html')
+            return 
+        
+        params = batman.TransitParams()
+        params.t0 = transit_dict['t0']
+        params.per = transit_dict['per']                     
+        params.rp = transit_dict['rp']                            
+        params.a = transit_dict['a']                       
+        params.inc = transit_dict['inc']                     
+        params.ecc = transit_dict['ecc']                 
+        params.w = transit_dict['w']                       
+        params.u = transit_dict['u']                
+        params.limb_dark = "quadratic"
+
+    P_all = []
+
+    # Plot the corrected target flux.
+    fig, axis = plt.subplots(nrows=1, ncols=num_nights,
+                             figsize=(20, 5), sharey=True)
+    #plt.subplots_adjust(left=0.07, wspace=0.05, top=0.86, bottom=0.17, right=0.96)
+    plt.subplots_adjust(left=0.07, wspace=0.05, top=0.92, bottom=0.17)
+
+    for i in range(num_nights):
+        inds = night_inds[i]
+        times_plot = times[inds]
+        corr_targ_flux_plot = corr_targ_flux[inds]
+        block_plot = block_inds[inds]
+
+        if len(transit_dict.keys()) != 0:
+            model_t = np.linspace(np.mean(times_plot)-standard_time_range/2, np.mean(times_plot)+standard_time_range/2, 10000)
+            m = batman.TransitModel(params, model_t)
+            model_flux =m.light_curve(params)
+
+        ut_date = julian.from_jd(times_plot[0])
+        ut_date_str = 'UT '+ut_date.strftime('%b. %d %Y')
+
+        # Set the axis behavior depending if there are 1 or more nights.
+        if num_nights == 1:
+            ax = axis
+        elif num_nights > 1:
+            ax = axis[i]
+
+        if sigma_clipping:
+            non_nan_inds = ~np.isnan(corr_targ_flux_plot)
+            times_plot = times_plot[non_nan_inds]
+            corr_targ_flux_plot = corr_targ_flux_plot[non_nan_inds]
+            block_plot = block_plot[non_nan_inds]
+
+            v, l, h = sigmaclip(corr_targ_flux_plot, 3.5, 3.5)
+            clip_inds = np.where((corr_targ_flux_plot > l) & (corr_targ_flux_plot < h))[0]
+            times_plot = times_plot[clip_inds]
+            corr_targ_flux_plot = corr_targ_flux_plot[clip_inds]
+            block_plot = block_plot[inds]
+
+        binned_times, binned_flux, binned_errs = block_binner_FF(times_plot, corr_targ_flux_plot, block_plot)#time_threshold=time_threshold, bin_mins=bin_mins)
+        
+        ax.grid(alpha=0.2)
+        # Plot the corrected target and corrected binned target flux.
+        ax.plot(times_plot, corr_targ_flux_plot, linestyle='',
+                marker='o', zorder=1, color='darkgrey', ms=5)
+        ax.errorbar(binned_times, binned_flux, binned_errs, linestyle='',
+                    marker='o', zorder=2, color='k', capsize=2, ms=7)
+
+        if fit_period==True:
+            freq, power = LombScargle(binned_times, binned_flux).autopower()
+            best_frequency = freq[np.argmax(power)]
+            t_fit = np.linspace(min(times_plot), max(times_plot))
+            ls = LombScargle(binned_times, binned_flux)
+            y_fit = ls.model(t_fit, best_frequency)
+            
+            ax.plot(t_fit, y_fit)
+
+            t = Time(binned_times,format='jd', scale='tdb')
+            t0 = float(t[0].isot[11:13]) + (float(t[0].isot[14:16])/60)
+            t1 = Time(t[0].value + (1/best_frequency), format='jd')
+            t1 = float(t1.isot[11:13]) + (float(t1.isot[14:16])/60)
+            T = t1-t0
+            P_all.append(T)
+
+            anchored_text = AnchoredText('P = '+str(round(T,2))+' hr', loc=2)
+            ax.add_artist(anchored_text)
+
+        if len(transit_dict.keys()) != 0:
+            ax.plot(model_t, model_flux, lw=3)
+        else:
+            # Plot the 5-sigma decrement line.
+            five_sig = 5*np.nanmean(binned_errs)
+            ax.axhline(1-five_sig, color='k', lw=2, linestyle='--', zorder=0, alpha=0.3)
+        ax.axhline(1, color='r', lw=2, zorder=0, alpha=0.8)
+        ax.tick_params(labelsize=16)
+
+        # Set labels.
+        if i == 0:
+            ax.set_ylabel('Normalized Flux', fontsize=20)
+        ax.set_xlabel('Time (BJD$_{TDB}$)', fontsize=20)
+
+        #ax.set_xlim(np.mean(times_plot)-standard_time_range/2,
+         #           np.mean(times_plot)+standard_time_range/2)
+
+        if force_y_lim[0] != 0.0 and force_y_lim[1] != 0.0:
+            ax.set_ylim(ylim[0], ylim[1])
+        else:
+            ax.set_ylim(1-standard_y, 1+standard_y)
+        
+        
+        #if mode == 'night':
+            #ax.text(np.mean(times_plot), ax.get_ylim()[
+                    #1], ut_date_str, fontsize=18, ha='center', va='top')
+
+    
+    if fit_period==True:
+        P_avg = np.mean(P_all)
+        plt.suptitle(sources[0]+', $P_{avg} = $'+str(round(P_avg, 2))+' hr', fontsize=20)
+        output_path = weighted_lc_path.parent/(mode+'_Best_Period_fit.png')
+    else:
+        plt.suptitle(sources[0], fontsize=20)
+        output_path = weighted_lc_path.parent/(mode+'_weighted_lc.png')
+    # Save the figure.
+    print('Saving {} normalized flux plot to {}.'.format(mode, output_path))
+    plt.savefig(output_path, dpi=300)
+
+
