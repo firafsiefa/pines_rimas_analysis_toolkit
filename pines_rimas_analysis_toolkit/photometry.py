@@ -2898,7 +2898,7 @@ def manual_ref_star_chooser(short_name, profile_data, positions=[], restore=Fals
             name = output_df['Name'][i]
             if int(name.split(' ')[1]) != i:
                 name = 'Reference '+str(i)
-                output_df[i, 'Name'] = name
+                output_df.loc[i,'Name'] = name
         # Replot everything.
         ax.cla()
         im = ax.imshow(image, origin='lower',
