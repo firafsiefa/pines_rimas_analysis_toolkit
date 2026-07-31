@@ -3023,7 +3023,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
             norm_err = np.zeros((num_frames, num_refs))
 
             # Get indices of each block for binning/plotting purposes.
-            block_inds = block_splitter(times, bin_mins=bin_mins, time_threshold=time_threshold)
+            #block_inds = block_splitter(times, bin_mins=bin_mins, time_threshold=time_threshold)
             all_nights_block_inds.append(block_inds)
 
             files = np.array(full_file_list[inds])
@@ -3350,7 +3350,7 @@ def weighted_lightcurve_FF(short_name, filter='J', phot_type='aper', convergence
                     np.zeros(len(night_inds[j]))+norm_night_weights[j][k])
 
         # Create the output dictionary
-        output_dict = {'Filename': file_list_save, 'Time BJD TDB': time_save, 'Sigma Clip Flag': sigma_clip_flag_save, short_name+' Normalized Flux': targ_flux_norm_save, short_name +
+        output_dict = {'Filename': file_list_save, 'Time BJD TDB': time_save, 'Block Number': all_nights_block_inds, 'Sigma Clip Flag': sigma_clip_flag_save, short_name+' Normalized Flux': targ_flux_norm_save, short_name +
                        ' Normalized Flux Error': targ_err_norm_save, short_name+' Corrected Flux': targ_flux_corr_save, short_name+' Corrected Flux Error': targ_flux_corr_err_save, 'ALC Flux': alc_flux_save, 'ALC Flux Error': alc_err_save}
         for j in range(num_refs):
             ref = ref_names[j]
